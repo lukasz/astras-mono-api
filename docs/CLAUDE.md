@@ -138,14 +138,27 @@ astras-mono-api/
 - **Use AWS SAM CLI for local testing** - Provides accurate simulation of AWS serverless architecture
 - Install SAM CLI: `brew tap aws/tap && brew install aws-sam-cli`
 - Local development workflow:
-  1. Build service: `export PATH=$PATH:$(go env GOPATH)/bin && mage build:kid`
-  2. Start SAM local: `sam local start-api --port 3000`
-  3. Test endpoints: http://127.0.0.1:3000/kids
-  4. Use Postman collections: `postman/kid_service.json` and `postman/caregiver_service.json`
+  1. Start logging: `./scripts/local-logging.sh start`
+  2. Start database: `docker-compose up -d`
+  3. Build service: `export PATH=$PATH:$(go env GOPATH)/bin && mage build:kid`
+  4. Start SAM local: `sam local start-api --env-vars config/env.json --docker-network astras-logging --port 3000`
+  5. Test endpoints: http://127.0.0.1:3000/kids
+  6. View logs: `./scripts/local-logging.sh dashboard` (http://localhost:8080)
+  7. Use Postman collections: `postman/kid_service.json` and `postman/caregiver_service.json`
 - **Key files for local dev**:
   - `template.yaml` - SAM template with API Gateway + Lambda configuration
-  - `LOCAL_DEVELOPMENT.md` - Detailed local development guide
+  - `docs/LOCAL_DEVELOPMENT.md` - Detailed local development guide
+  - `docs/LOCAL_LOGGING.md` - Local logging setup with Dozzle
+  - `config/env.json` - Environment variables for SAM Local
+  - `scripts/local-logging.sh` - Local logging management script
   - `postman/` - Ready-to-import Postman collections for all services
+
+### Local Logging
+- **Simple Dozzle-based logging** for local development
+- Quick start: `./scripts/local-logging.sh start`
+- View logs: http://localhost:8080 (Docker logs) + http://localhost:8081 (Files)
+- All logs use same JSON structure as production CloudWatch
+- Automatic environment detection (local vs Lambda)
 
 ### Deployment
 - Use Serverless Framework for AWS Lambda deployment
@@ -220,24 +233,30 @@ sam validate
 ## Project Structure
 ```
 astras-mono-api/
-├── cmd/
+├── cmd/                 # Application entry points
 │   ├── kid-service/     # Kid service Lambda handler
 │   ├── caregiver-service/ # Caregiver service Lambda handler
 │   └── star-service/    # Star service Lambda handler
-├── services/
-│   ├── kid-service/     # Kid service Serverless config
-│   ├── caregiver-service/ # Caregiver service Serverless config
-│   └── star-service/    # Star service Serverless config
 ├── internal/            # Private application code
 ├── pkg/                 # Public library code
+├── config/              # Configuration files
+│   ├── docker-compose.dozzle.yml # Dozzle logging setup
+│   ├── serverless-*.yml # Serverless Framework configs
+│   ├── env.json         # Environment variables for SAM
+│   └── nginx-logs.conf  # Nginx log viewer config
+├── docs/                # Documentation
+│   ├── CLAUDE.md        # This file - project instructions
+│   ├── LOCAL_DEVELOPMENT.md # Local development guide
+│   ├── LOCAL_LOGGING.md # Local logging setup
+│   ├── DATABASE.md      # Database documentation
+│   └── LOGGING.md       # Production logging
+├── scripts/             # Utility scripts
+│   └── local-logging.sh # Local logging management
 ├── bin/                 # Built binaries (ignored by git)
 ├── template.yaml        # AWS SAM template for local development
 ├── postman/             # Postman collections for API testing
-│   ├── kid_service.json     # Kid Service CRUD operations
-│   ├── caregiver_service.json # Caregiver Service CRUD + validation
-│   └── README.md        # Postman collections documentation
-├── LOCAL_DEVELOPMENT.md # Local development guide
-├── magefile.go         # Mage build configuration
+├── database/            # Database files (migrations, schema)
+└── magefile.go         # Mage build configuration
 ```
 
 ## Services

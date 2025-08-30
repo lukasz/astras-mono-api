@@ -55,10 +55,8 @@ build/
 *.log
 logs/
 
-# Local logging infrastructure
-docker-compose.logging.yml
-fluent-bit.conf
-logstash/
+# Local logging infrastructure (legacy - now managed in config/)
+# All logging configs are now properly organized in config/ directory
 
 # Test coverage
 coverage/
