@@ -82,7 +82,11 @@ curl -X DELETE http://127.0.0.1:3000/kids/1
 ```
 
 ### Postman
-Import the collection from `postman_collection.json` into Postman. It contains all endpoints configured for local environment.
+Import collections from the `postman/` folder into Postman:
+- `postman/kid_service.json` - Kid Service CRUD operations
+- `postman/caregiver_service.json` - Caregiver Service CRUD + validation endpoints
+
+Both collections contain all endpoints configured for local environment.
 
 ## 🔧 Development Workflow
 

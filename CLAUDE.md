@@ -90,11 +90,11 @@ This is the astras-mono-api project - a Go monorepo for API services deployed to
   1. Build service: `export PATH=$PATH:$(go env GOPATH)/bin && mage build:kid`
   2. Start SAM local: `sam local start-api --port 3000`
   3. Test endpoints: http://127.0.0.1:3000/kids
-  4. Use Postman collection: `postman_collection.json`
+  4. Use Postman collections: `postman/kid_service.json` and `postman/caregiver_service.json`
 - **Key files for local dev**:
   - `template.yaml` - SAM template with API Gateway + Lambda configuration
   - `LOCAL_DEVELOPMENT.md` - Detailed local development guide
-  - `postman_collection.json` - Ready-to-import Postman collection
+  - `postman/` - Ready-to-import Postman collections for all services
 
 ### Deployment
 - Use Serverless Framework for AWS Lambda deployment
@@ -191,7 +191,10 @@ astras-mono-api/
 ├── pkg/                 # Public library code
 ├── bin/                 # Built binaries (ignored by git)
 ├── template.yaml        # AWS SAM template for local development
-├── postman_collection.json # Postman collection for API testing
+├── postman/             # Postman collections for API testing
+│   ├── kid_service.json     # Kid Service CRUD operations
+│   ├── caregiver_service.json # Caregiver Service CRUD + validation
+│   └── README.md        # Postman collections documentation
 ├── LOCAL_DEVELOPMENT.md # Local development guide
 ├── magefile.go         # Mage build configuration
 └── package.json        # Node.js dependencies for Serverless

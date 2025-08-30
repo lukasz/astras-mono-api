@@ -20,7 +20,7 @@ curl http://127.0.0.1:3000/kids
 ### Documentation
 - **[LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md)** - Complete local development guide
 - **[CLAUDE.md](CLAUDE.md)** - Instructions for AI assistant
-- **[postman_collection.json](postman_collection.json)** - Postman collection for testing
+- **[postman/](postman/)** - Postman collections for API testing
 
 ## 📦 Services
 - **kid-service** - Manages children/kids in the system
