@@ -10,6 +10,22 @@ provider:
   architecture: x86_64
   environment:
     STAGE: ${self:provider.stage}
+    DB_HOST: ${ssm:/astras/${self:provider.stage}/db/host}
+    DB_PORT: ${ssm:/astras/${self:provider.stage}/db/port}
+    DB_NAME: ${ssm:/astras/${self:provider.stage}/db/name}
+    DB_USER: ${ssm:/astras/${self:provider.stage}/db/username}
+    DB_PASSWORD: ${ssm:/astras/${self:provider.stage}/db/password~true}
+    DB_SSL_MODE: require
+    DB_MAX_OPEN_CONNS: 25
+    DB_MAX_IDLE_CONNS: 5
+    DB_MAX_LIFETIME: 5m
+  
+  vpc:
+    securityGroupIds:
+      - ${cf:astras-infrastructure-${self:provider.stage}.LambdaSecurityGroupId}
+    subnetIds:
+      - ${cf:astras-infrastructure-${self:provider.stage}.SubnetAId}
+      - ${cf:astras-infrastructure-${self:provider.stage}.SubnetBId}
   
   iam:
     role:
@@ -20,6 +36,13 @@ provider:
             - logs:CreateLogStream
             - logs:PutLogEvents
           Resource: '*'
+        - Effect: Allow
+          Action:
+            - ssm:GetParameter
+            - ssm:GetParameters
+            - ssm:GetParametersByPath
+          Resource: 
+            - arn:aws:ssm:${self:provider.region}:*:parameter/astras/${self:provider.stage}/*
 
 functions:
   caregiver:

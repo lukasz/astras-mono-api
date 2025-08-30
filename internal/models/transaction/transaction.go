@@ -32,13 +32,13 @@ const (
 
 // Transaction represents a star transaction in the system
 type Transaction struct {
-	ID          int             `json:"id"`
-	KidID       int             `json:"kid_id" validate:"required,min=1"`
-	Type        TransactionType `json:"type" validate:"required,oneof=earn spend"`
-	Amount      int             `json:"amount" validate:"required,min=1,max=100"`
-	Description string          `json:"description" validate:"required,max=255"`
-	CreatedAt   time.Time       `json:"created_at"`
-	UpdatedAt   time.Time       `json:"updated_at,omitempty"`
+	ID          int             `json:"id" db:"id"`
+	KidID       int             `json:"kid_id" db:"kid_id" validate:"required,min=1"`
+	Type        TransactionType `json:"type" db:"type" validate:"required,oneof=earn spend"`
+	Amount      int             `json:"amount" db:"amount" validate:"required,min=1,max=100"`
+	Description string          `json:"description" db:"description" validate:"required,max=255"`
+	CreatedAt   time.Time       `json:"created_at" db:"created_at"`
+	UpdatedAt   time.Time       `json:"updated_at,omitempty" db:"updated_at"`
 }
 
 var validate *validator.Validate

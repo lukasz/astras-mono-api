@@ -1,0 +1,203 @@
+service: astras-infrastructure
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: provided.al2
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'eu-central-1'}
+
+resources:
+  Resources:
+    # VPC for RDS and Lambda
+    AstrasVPC:
+      Type: AWS::EC2::VPC
+      Properties:
+        CidrBlock: 10.0.0.0/16
+        EnableDnsHostnames: true
+        EnableDnsSupport: true
+        Tags:
+          - Key: Name
+            Value: astras-vpc-${self:provider.stage}
+
+    # Private Subnets for RDS and Lambda
+    AstrasSubnetA:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId: !Ref AstrasVPC
+        CidrBlock: 10.0.1.0/24
+        AvailabilityZone: ${self:provider.region}a
+        Tags:
+          - Key: Name
+            Value: astras-subnet-a-${self:provider.stage}
+
+    AstrasSubnetB:
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId: !Ref AstrasVPC
+        CidrBlock: 10.0.2.0/24
+        AvailabilityZone: ${self:provider.region}b
+        Tags:
+          - Key: Name
+            Value: astras-subnet-b-${self:provider.stage}
+
+    # Security Group for RDS
+    AstrasRDSSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: Allow Lambda access to RDS PostgreSQL
+        VpcId: !Ref AstrasVPC
+        SecurityGroupIngress:
+          - IpProtocol: tcp
+            FromPort: 5432
+            ToPort: 5432
+            SourceSecurityGroupId: !Ref AstrasLambdaSecurityGroup
+
+    # Security Group for Lambda  
+    AstrasLambdaSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: Allow Lambda to access RDS
+        VpcId: !Ref AstrasVPC
+        SecurityGroupEgress:
+          - IpProtocol: tcp
+            FromPort: 5432
+            ToPort: 5432
+            DestinationSecurityGroupId: !Ref AstrasRDSSecurityGroup
+
+    # DB Subnet Group (requires at least 2 subnets in different AZs)
+    AstrasDBSubnetGroup:
+      Type: AWS::RDS::DBSubnetGroup
+      Properties:
+        DBSubnetGroupDescription: Subnet group for Astras PostgreSQL RDS
+        SubnetIds:
+          - !Ref AstrasSubnetA
+          - !Ref AstrasSubnetB
+
+    # RDS PostgreSQL Instance
+    AstrasRDSInstance:
+      Type: AWS::RDS::DBInstance
+      DeletionPolicy: ${self:custom.deletionPolicy.${self:provider.stage}, 'Delete'}
+      Properties:
+        DBInstanceIdentifier: astras-db-${self:provider.stage}
+        DBInstanceClass: ${self:custom.rds.instanceClass.${self:provider.stage}, 'db.t3.micro'}
+        Engine: postgres
+        EngineVersion: '15.4'
+        MasterUsername: ${self:custom.rds.username}
+        MasterUserPassword: ${self:custom.rds.password}
+        AllocatedStorage: ${self:custom.rds.allocatedStorage.${self:provider.stage}, '20'}
+        StorageType: gp2
+        VPCSecurityGroups:
+          - !Ref AstrasRDSSecurityGroup
+        DBSubnetGroupName: !Ref AstrasDBSubnetGroup
+        MultiAZ: ${self:custom.rds.multiAZ.${self:provider.stage}, false}
+        PubliclyAccessible: false
+        StorageEncrypted: true
+        BackupRetentionPeriod: ${self:custom.rds.backupRetention.${self:provider.stage}, 7}
+        DeletionProtection: ${self:custom.rds.deletionProtection.${self:provider.stage}, false}
+        Tags:
+          - Key: Name
+            Value: astras-db-${self:provider.stage}
+
+    # Systems Manager Parameters for database connection
+    AstrasDBHostParameter:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /astras/${self:provider.stage}/db/host
+        Type: String
+        Value: !GetAtt AstrasRDSInstance.Endpoint.Address
+        Description: RDS endpoint for Astras database
+
+    AstrasDBPortParameter:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /astras/${self:provider.stage}/db/port
+        Type: String
+        Value: !GetAtt AstrasRDSInstance.Endpoint.Port
+        Description: RDS port for Astras database
+
+    AstrasDBNameParameter:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /astras/${self:provider.stage}/db/name
+        Type: String
+        Value: ${self:custom.rds.dbName}
+        Description: Database name for Astras
+
+    AstrasDBUsernameParameter:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /astras/${self:provider.stage}/db/username
+        Type: String
+        Value: ${self:custom.rds.username}
+        Description: Database username for Astras
+
+    AstrasDBPasswordParameter:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /astras/${self:provider.stage}/db/password
+        Type: SecureString
+        Value: ${self:custom.rds.password}
+        Description: Database password for Astras
+
+custom:
+  rds:
+    username: astras_user
+    password: ${env:DB_PASSWORD, 'DefaultPassword123!'}
+    dbName: astras
+    instanceClass:
+      dev: db.t3.micro
+      staging: db.t3.small
+      prod: db.t3.medium
+    allocatedStorage:
+      dev: 20
+      staging: 100
+      prod: 200
+    multiAZ:
+      dev: false
+      staging: false
+      prod: true
+    backupRetention:
+      dev: 7
+      staging: 14
+      prod: 30
+    deletionProtection:
+      dev: false
+      staging: true
+      prod: true
+  deletionPolicy:
+    dev: Delete
+    staging: Retain
+    prod: Retain
+
+Outputs:
+  VPCId:
+    Description: VPC ID for Astras services
+    Value: !Ref AstrasVPC
+    Export:
+      Name: astras-vpc-id-${self:provider.stage}
+
+  SubnetAId:
+    Description: Subnet A ID
+    Value: !Ref AstrasSubnetA
+    Export:
+      Name: astras-subnet-a-id-${self:provider.stage}
+
+  SubnetBId:
+    Description: Subnet B ID
+    Value: !Ref AstrasSubnetB
+    Export:
+      Name: astras-subnet-b-id-${self:provider.stage}
+
+  LambdaSecurityGroupId:
+    Description: Security Group ID for Lambda functions
+    Value: !Ref AstrasLambdaSecurityGroup
+    Export:
+      Name: astras-lambda-sg-id-${self:provider.stage}
+
+  RDSEndpoint:
+    Description: RDS instance endpoint
+    Value: !GetAtt AstrasRDSInstance.Endpoint.Address
+    Export:
+      Name: astras-rds-endpoint-${self:provider.stage}

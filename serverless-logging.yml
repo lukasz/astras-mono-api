@@ -1,0 +1,189 @@
+service: astras-logging
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: provided.al2
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'eu-central-1'}
+
+resources:
+  Resources:
+    # Central Log Group for all services
+    AstrasLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /astras/${self:provider.stage}/application
+        RetentionInDays: ${self:custom.logRetention.${self:provider.stage}, 14}
+
+    # Log Groups for each service
+    KidServiceLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /astras/${self:provider.stage}/kid-service
+        RetentionInDays: ${self:custom.logRetention.${self:provider.stage}, 14}
+
+    CaregiverServiceLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /astras/${self:provider.stage}/caregiver-service
+        RetentionInDays: ${self:custom.logRetention.${self:provider.stage}, 14}
+
+    StarServiceLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /astras/${self:provider.stage}/star-service
+        RetentionInDays: ${self:custom.logRetention.${self:provider.stage}, 14}
+
+    MigrationServiceLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /astras/${self:provider.stage}/migration-service
+        RetentionInDays: ${self:custom.logRetention.${self:provider.stage}, 14}
+
+    # Log Group for database operations
+    DatabaseLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /astras/${self:provider.stage}/database
+        RetentionInDays: ${self:custom.logRetention.${self:provider.stage}, 30}
+
+    # Metric Filters for Error Tracking
+    ErrorMetricFilter:
+      Type: AWS::Logs::MetricFilter
+      Properties:
+        LogGroupName: !Ref AstrasLogGroup
+        FilterPattern: '{ $.level = "ERROR" }'
+        MetricTransformations:
+          - MetricNamespace: Astras/${self:provider.stage}
+            MetricName: ErrorCount
+            MetricValue: '1'
+            DefaultValue: 0
+
+    # Metric Filter for Database Errors
+    DatabaseErrorMetricFilter:
+      Type: AWS::Logs::MetricFilter
+      Properties:
+        LogGroupName: !Ref DatabaseLogGroup
+        FilterPattern: '{ $.level = "ERROR" || $.message = "*connection*failed*" || $.message = "*timeout*" }'
+        MetricTransformations:
+          - MetricNamespace: Astras/${self:provider.stage}/Database
+            MetricName: DatabaseErrorCount
+            MetricValue: '1'
+            DefaultValue: 0
+
+    # Metric Filter for Performance Monitoring
+    SlowQueryMetricFilter:
+      Type: AWS::Logs::MetricFilter
+      Properties:
+        LogGroupName: !Ref DatabaseLogGroup
+        FilterPattern: '{ $.duration > 1000 }'
+        MetricTransformations:
+          - MetricNamespace: Astras/${self:provider.stage}/Database
+            MetricName: SlowQueryCount
+            MetricValue: '1'
+            DefaultValue: 0
+
+    # CloudWatch Dashboard
+    AstrasDashboard:
+      Type: AWS::CloudWatch::Dashboard
+      Properties:
+        DashboardName: Astras-${self:provider.stage}
+        DashboardBody: !Sub |
+          {
+            "widgets": [
+              {
+                "type": "log",
+                "x": 0,
+                "y": 0,
+                "width": 12,
+                "height": 6,
+                "properties": {
+                  "query": "SOURCE '/astras/${self:provider.stage}/application'\n| fields @timestamp, level, service, message\n| filter level = \"ERROR\"\n| sort @timestamp desc\n| limit 100",
+                  "region": "${AWS::Region}",
+                  "title": "Recent Errors",
+                  "view": "table"
+                }
+              },
+              {
+                "type": "metric",
+                "x": 0,
+                "y": 6,z
+                "width": 12,
+                "height": 6,
+                "properties": {
+                  "metrics": [
+                    [ "Astras/${self:provider.stage}", "ErrorCount" ],
+                    [ "Astras/${self:provider.stage}/Database", "DatabaseErrorCount" ],
+                    [ "Astras/${self:provider.stage}/Database", "SlowQueryCount" ]
+                  ],
+                  "period": 300,
+                  "stat": "Sum",
+                  "region": "${AWS::Region}",
+                  "title": "Error Metrics"
+                }
+              },
+              {
+                "type": "log",
+                "x": 0,
+                "y": 12,
+                "width": 12,
+                "height": 6,
+                "properties": {
+                  "query": "SOURCE '/astras/${self:provider.stage}/database'\n| fields @timestamp, operation, duration, status\n| filter duration > 1000\n| sort @timestamp desc\n| limit 50",
+                  "region": "${AWS::Region}",
+                  "title": "Slow Database Operations",
+                  "view": "table"
+                }
+              }
+            ]
+          }
+
+    # Alarms
+    HighErrorRateAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: Astras-${self:provider.stage}-HighErrorRate
+        AlarmDescription: High error rate detected in Astras application
+        MetricName: ErrorCount
+        Namespace: Astras/${self:provider.stage}
+        Statistic: Sum
+        Period: 300
+        EvaluationPeriods: 2
+        Threshold: 5
+        ComparisonOperator: GreaterThanOrEqualToThreshold
+        TreatMissingData: notBreaching
+
+    DatabaseErrorAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmName: Astras-${self:provider.stage}-DatabaseErrors
+        AlarmDescription: Database errors detected in Astras application
+        MetricName: DatabaseErrorCount
+        Namespace: Astras/${self:provider.stage}/Database
+        Statistic: Sum
+        Period: 300
+        EvaluationPeriods: 1
+        Threshold: 1
+        ComparisonOperator: GreaterThanOrEqualToThreshold
+        TreatMissingData: notBreaching
+
+custom:
+  logRetention:
+    dev: 7        # 1 week for development
+    staging: 30   # 1 month for staging  
+    prod: 90      # 3 months for production
+
+Outputs:
+  CentralLogGroup:
+    Description: Central log group for Astras application
+    Value: !Ref AstrasLogGroup
+    Export:
+      Name: astras-log-group-${self:provider.stage}
+
+  DashboardURL:
+    Description: CloudWatch Dashboard URL
+    Value: !Sub 'https://${AWS::Region}.console.aws.amazon.com/cloudwatch/home?region=${AWS::Region}#dashboards:name=Astras-${self:provider.stage}'
+    Export:
+      Name: astras-dashboard-url-${self:provider.stage}

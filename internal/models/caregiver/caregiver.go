@@ -32,12 +32,12 @@ const (
 // Caregiver represents a parent or guardian in the Astras system
 // with contact information and relationship details.
 type Caregiver struct {
-	ID           int              `json:"id"`                                       // Unique identifier
-	Name         string           `json:"name" validate:"required,min=2,max=100"`  // Full name
-	Email        string           `json:"email" validate:"required,email"`         // Contact email address
-	Relationship RelationshipType `json:"relationship" validate:"required,oneof=parent guardian grandparent relative caregiver"` // Relationship to child
-	CreatedAt    time.Time        `json:"created_at"`                               // Record creation timestamp
-	UpdatedAt    time.Time        `json:"updated_at,omitempty"`                   // Last update timestamp
+	ID           int              `json:"id" db:"id"`                                       // Unique identifier
+	Name         string           `json:"name" db:"name" validate:"required,min=2,max=100"`  // Full name
+	Email        string           `json:"email" db:"email" validate:"required,email"`         // Contact email address
+	Relationship RelationshipType `json:"relationship" db:"relationship" validate:"required,oneof=parent guardian grandparent relative caregiver"` // Relationship to child
+	CreatedAt    time.Time        `json:"created_at" db:"created_at"`                               // Record creation timestamp
+	UpdatedAt    time.Time        `json:"updated_at,omitempty" db:"updated_at"`                   // Last update timestamp
 }
 
 var validate *validator.Validate

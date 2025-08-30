@@ -30,11 +30,11 @@ Resources:
       Handler: bootstrap
       Environment:
         Variables:
-          DB_HOST: localhost
+          DB_HOST: astras-postgres
           DB_PORT: "5432"
-          DB_NAME: astras_db
-          DB_USER: astras_user
-          DB_PASSWORD: astras_secure_password
+          DB_NAME: astras
+          DB_USER: postgres
+          DB_PASSWORD: password
           DB_SSL_MODE: disable
       Events:
         GetAllKids:
@@ -83,6 +83,14 @@ Resources:
     Properties:
       CodeUri: bin/caregiver-service/
       Handler: bootstrap
+      Environment:
+        Variables:
+          DB_HOST: astras-postgres
+          DB_PORT: "5432"
+          DB_NAME: astras
+          DB_USER: postgres
+          DB_PASSWORD: password
+          DB_SSL_MODE: disable
       Events:
         GetAllCaregivers:
           Type: Api
@@ -142,6 +150,14 @@ Resources:
     Properties:
       CodeUri: bin/star-service/
       Handler: bootstrap
+      Environment:
+        Variables:
+          DB_HOST: astras-postgres
+          DB_PORT: "5432"
+          DB_NAME: astras
+          DB_USER: postgres
+          DB_PASSWORD: password
+          DB_SSL_MODE: disable
       Events:
         GetAllTransactions:
           Type: Api

@@ -1,4 +1,4 @@
-service: astras-kid-service
+service: astras-migration-service
 
 frameworkVersion: '3'
 
@@ -45,41 +45,45 @@ provider:
             - arn:aws:ssm:${self:provider.region}:*:parameter/astras/${self:provider.stage}/*
 
 functions:
-  kid:
+  migration:
     handler: bootstrap
+    timeout: 300 # 5 minutes for long-running migrations
     package:
       patterns:
-        - '../../bin/kid-service/bootstrap'
+        - '../../bin/migration-service/bootstrap'
+    layers:
+      - !Ref MigrationsLayer
     events:
       - httpApi:
-          path: /kids
-          method: get
-      - httpApi:
-          path: /kids
+          path: /migrations/migrate
           method: post
       - httpApi:
-          path: /kids/{id}
+          path: /migrations/rollback
+          method: post
+      - httpApi:
+          path: /migrations/status
           method: get
-      - httpApi:
-          path: /kids/{id}
-          method: put
-      - httpApi:
-          path: /kids/{id}
-          method: delete
+
+layers:
+  MigrationsLayer:
+    path: ../../database/migrations
+    name: astras-migrations-${self:provider.stage}
+    description: Database migration files for Astras
+    compatibleRuntimes:
+      - provided.al2
 
 package:
   patterns:
     - '!./**'
-    - '../../bin/kid-service/bootstrap'
+    - '../../bin/migration-service/bootstrap'
 
 custom:
   stage: ${opt:stage, self:provider.stage, 'dev'}
 
-
 resources:
   Resources:
-    KidServiceLogGroup:
+    MigrationServiceLogGroup:
       Type: AWS::Logs::LogGroup
       Properties:
-        LogGroupName: /aws/lambda/astras-kid-service-${self:provider.stage}-kid
+        LogGroupName: /aws/lambda/astras-migration-service-${self:provider.stage}-migration
         RetentionInDays: 14

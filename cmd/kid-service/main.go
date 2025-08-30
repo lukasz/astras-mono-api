@@ -19,6 +19,8 @@ import (
 	"github.com/lukasz/astras-mono-api/internal/database/interfaces"
 	"github.com/lukasz/astras-mono-api/internal/database/postgres"
 	"github.com/lukasz/astras-mono-api/internal/handler"
+	"github.com/lukasz/astras-mono-api/internal/logger"
+	"github.com/lukasz/astras-mono-api/internal/middleware"
 	"github.com/lukasz/astras-mono-api/internal/models/kid"
 )
 
@@ -195,10 +197,22 @@ func (h *KidHandler) Delete(ctx context.Context, request events.APIGatewayProxyR
 	}, nil
 }
 
-var kidHandler *KidHandler
+var (
+	kidHandler      *KidHandler
+	loggingMiddleware *middleware.LoggingMiddleware
+	appLogger       *logger.Logger
+)
 
 // initHandler initializes the kid handler with database connection
 func initHandler() error {
+	// Initialize application logger
+	appLogger = logger.New(logger.Config{
+		ServiceName: "kid-service",
+		MinLevel:    logger.INFO,
+	})
+
+	// Initialize logging middleware
+	loggingMiddleware = middleware.NewLoggingMiddleware("kid-service")
 	// Load database configuration from environment variables
 	config := database.LoadConfigFromEnv()
 
@@ -231,7 +245,12 @@ func initHandler() error {
 // handleRequest is the main entry point for all HTTP requests to the Kid Service.
 // It delegates request processing to the kid handler with database connectivity.
 func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	return handler.HandleRequest(ctx, request, kidHandler)
+	// Wrap the actual handler with logging middleware
+	wrappedHandler := loggingMiddleware.WrapHandler(func(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+		return handler.HandleRequest(ctx, request, kidHandler)
+	})
+	
+	return wrappedHandler(ctx, request)
 }
 
 // main initializes the database connection and starts the AWS Lambda function handler.

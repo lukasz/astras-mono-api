@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -14,6 +15,9 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 
+	"github.com/lukasz/astras-mono-api/internal/database"
+	"github.com/lukasz/astras-mono-api/internal/database/interfaces"
+	"github.com/lukasz/astras-mono-api/internal/database/postgres"
 	"github.com/lukasz/astras-mono-api/internal/handler"
 	"github.com/lukasz/astras-mono-api/internal/models/caregiver"
 )
@@ -64,40 +68,40 @@ func (cr *CaregiverRequest) ToCaregiver(id ...int) (*caregiver.Caregiver, error)
 
 // CaregiverHandler implements the handler.Handler interface for caregiver-specific operations.
 // This struct contains all the business logic for managing caregivers in the system.
-type CaregiverHandler struct{}
+type CaregiverHandler struct{
+	repo interfaces.CaregiverRepository
+}
+
+// NewCaregiverHandler creates a new caregiver handler with database repository
+func NewCaregiverHandler(repo interfaces.CaregiverRepository) *CaregiverHandler {
+	return &CaregiverHandler{
+		repo: repo,
+	}
+}
 
 // GetAll retrieves and returns a list of all caregivers in the system.
-// Returns mock data for demonstration purposes - in production this would
-// query a database or external service.
+// Uses the database repository to fetch all caregivers from PostgreSQL.
 func (h *CaregiverHandler) GetAll(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
-	// Mock data - in production this would come from a database
-	mockCaregivers := []caregiver.Caregiver{
-		{
-			ID:           1,
-			Name:         "Sarah Johnson",
-			Email:        "sarah.johnson@example.com",
-			Relationship: caregiver.RelationshipParent,
-			CreatedAt:    time.Now().AddDate(0, -3, 0), // 3 months ago
-		},
-		{
-			ID:           2,
-			Name:         "Mike Smith",
-			Email:        "mike.smith@example.com",
-			Relationship: caregiver.RelationshipGuardian,
-			CreatedAt:    time.Now().AddDate(0, -1, 0), // 1 month ago
-		},
+	caregivers, err := h.repo.GetAll(ctx)
+	if err != nil {
+		return handler.Response{}, fmt.Errorf("failed to get all caregivers: %w", err)
+	}
+
+	// Convert from []*caregiver.Caregiver to []caregiver.Caregiver for JSON response
+	caregiverList := make([]caregiver.Caregiver, len(caregivers))
+	for i, c := range caregivers {
+		caregiverList[i] = *c
 	}
 
 	return handler.Response{
 		Message: "Caregivers retrieved successfully",
 		Service: "caregiver-service",
-		Data:    mockCaregivers,
+		Data:    caregiverList,
 	}, nil
 }
 
 // GetByID retrieves a specific caregiver by their unique identifier.
-// Extracts the caregiver ID from the URL path parameters and returns mock caregiver data.
-// In production, this would query the database for the specific caregiver record.
+// Extracts the caregiver ID from the URL path parameters and queries the database.
 func (h *CaregiverHandler) GetByID(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
 	idStr := request.PathParameters["id"]
 	id, err := strconv.Atoi(idStr)
@@ -105,19 +109,15 @@ func (h *CaregiverHandler) GetByID(ctx context.Context, request events.APIGatewa
 		return handler.Response{}, fmt.Errorf("invalid caregiver ID: %s", idStr)
 	}
 
-	// Mock data - in production this would come from a database lookup
-	mockCaregiver := caregiver.Caregiver{
-		ID:           id,
-		Name:         "Sarah Johnson",
-		Email:        "sarah.johnson@example.com",
-		Relationship: caregiver.RelationshipParent,
-		CreatedAt:    time.Now().AddDate(0, -3, 0),
+	caregiverModel, err := h.repo.GetByID(ctx, id)
+	if err != nil {
+		return handler.Response{}, fmt.Errorf("failed to get caregiver: %w", err)
 	}
 
 	return handler.Response{
 		Message: fmt.Sprintf("Caregiver %d retrieved successfully", id),
 		Service: "caregiver-service",
-		Data:    mockCaregiver,
+		Data:    *caregiverModel,
 	}, nil
 }
 
@@ -137,13 +137,16 @@ func (h *CaregiverHandler) Create(ctx context.Context, request events.APIGateway
 		return handler.Response{}, fmt.Errorf("validation failed: %v", err)
 	}
 
-	// In production, save to database and get real ID
-	caregiverModel.ID = 3 // Mock generated ID
+	// Save to database
+	createdCaregiver, err := h.repo.Create(ctx, caregiverModel)
+	if err != nil {
+		return handler.Response{}, fmt.Errorf("failed to create caregiver: %w", err)
+	}
 
 	return handler.Response{
-		Message: fmt.Sprintf("Caregiver %s created successfully", caregiverModel.Name),
+		Message: fmt.Sprintf("Caregiver %s created successfully", createdCaregiver.Name),
 		Service: "caregiver-service",
-		Data:    caregiverModel,
+		Data:    *createdCaregiver,
 	}, nil
 }
 
@@ -169,10 +172,16 @@ func (h *CaregiverHandler) Update(ctx context.Context, request events.APIGateway
 		return handler.Response{}, fmt.Errorf("validation failed: %v", err)
 	}
 
+	// Update in database
+	updatedCaregiver, err := h.repo.Update(ctx, caregiverModel)
+	if err != nil {
+		return handler.Response{}, fmt.Errorf("failed to update caregiver: %w", err)
+	}
+
 	return handler.Response{
 		Message: fmt.Sprintf("Caregiver %d updated successfully", id),
 		Service: "caregiver-service",
-		Data:    caregiverModel,
+		Data:    *updatedCaregiver,
 	}, nil
 }
 
@@ -186,8 +195,10 @@ func (h *CaregiverHandler) Delete(ctx context.Context, request events.APIGateway
 		return handler.Response{}, fmt.Errorf("invalid caregiver ID: %s", idStr)
 	}
 
-	// In production, perform database deletion here
-	// For now, just return success
+	// Delete from database
+	if err := h.repo.Delete(ctx, id); err != nil {
+		return handler.Response{}, fmt.Errorf("failed to delete caregiver: %w", err)
+	}
 
 	return handler.Response{
 		Message: fmt.Sprintf("Caregiver %d deleted successfully", id),
@@ -244,10 +255,42 @@ func (h *CaregiverHandler) ValidateRelationship(ctx context.Context, request eve
 	}, nil
 }
 
+var caregiverHandler *CaregiverHandler
+
+// initHandler initializes the caregiver handler with database connection
+func initHandler() error {
+	// Load database configuration from environment variables
+	config := database.LoadConfigFromEnv()
+
+	// Create PostgreSQL repository manager
+	repoManager, err := postgres.NewRepositoryManager(&postgres.Config{
+		Host:         config.Host,
+		Port:         config.Port,
+		Database:     config.Database,
+		Username:     config.Username,
+		Password:     config.Password,
+		SSLMode:      config.SSLMode,
+		MaxOpenConns: config.MaxOpenConns,
+		MaxIdleConns: config.MaxIdleConns,
+		MaxLifetime:  config.MaxLifetime,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to initialize database: %w", err)
+	}
+
+	// Test database connection
+	if err := repoManager.Ping(context.Background()); err != nil {
+		return fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	// Create caregiver handler with repository
+	caregiverHandler = NewCaregiverHandler(repoManager.Caregivers())
+	return nil
+}
+
 // handleRequest is the main entry point for all HTTP requests to the Caregiver Service.
-// It creates a CaregiverHandler instance and handles both CRUD operations and validation endpoints.
+// It handles both CRUD operations and validation endpoints using the database-connected handler.
 func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	caregiverHandler := &CaregiverHandler{}
 
 	// Handle validation endpoints
 	if strings.HasPrefix(request.Path, "/validate/") {
@@ -296,8 +339,15 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 	return handler.HandleRequest(ctx, request, caregiverHandler)
 }
 
-// main initializes and starts the AWS Lambda function handler.
+// main initializes the database connection and starts the AWS Lambda function handler.
 // This function is called when the Lambda container starts up.
 func main() {
+	// Initialize handler with database connection
+	if err := initHandler(); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to initialize caregiver service: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Start Lambda handler
 	lambda.Start(handleRequest)
 }

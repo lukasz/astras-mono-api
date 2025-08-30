@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -14,6 +15,9 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 
+	"github.com/lukasz/astras-mono-api/internal/database"
+	"github.com/lukasz/astras-mono-api/internal/database/interfaces"
+	"github.com/lukasz/astras-mono-api/internal/database/postgres"
 	"github.com/lukasz/astras-mono-api/internal/handler"
 	"github.com/lukasz/astras-mono-api/internal/models/transaction"
 )
@@ -64,50 +68,40 @@ func (tr *TransactionRequest) ToTransaction(id ...int) (*transaction.Transaction
 
 // TransactionHandler implements the handler.Handler interface for star transaction operations.
 // This struct contains all the business logic for managing star transactions in the system.
-type TransactionHandler struct{}
+type TransactionHandler struct{
+	repo interfaces.TransactionRepository
+}
+
+// NewTransactionHandler creates a new transaction handler with database repository
+func NewTransactionHandler(repo interfaces.TransactionRepository) *TransactionHandler {
+	return &TransactionHandler{
+		repo: repo,
+	}
+}
 
 // GetAll retrieves and returns a list of all star transactions in the system.
-// Returns mock data for demonstration purposes - in production this would
-// query a database or external service.
+// Uses the database repository to fetch all transactions from PostgreSQL.
 func (h *TransactionHandler) GetAll(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
-	// Mock data - in production this would come from a database
-	mockTransactions := []transaction.Transaction{
-		{
-			ID:          1,
-			KidID:       1,
-			Type:        transaction.TransactionTypeEarn,
-			Amount:      5,
-			Description: "Completed homework perfectly",
-			CreatedAt:   time.Now().AddDate(0, 0, -7), // 7 days ago
-		},
-		{
-			ID:          2,
-			KidID:       2,
-			Type:        transaction.TransactionTypeSpend,
-			Amount:      3,
-			Description: "Bought sticker reward",
-			CreatedAt:   time.Now().AddDate(0, 0, -3), // 3 days ago
-		},
-		{
-			ID:          3,
-			KidID:       1,
-			Type:        transaction.TransactionTypeEarn,
-			Amount:      10,
-			Description: "Cleaned room thoroughly",
-			CreatedAt:   time.Now().AddDate(0, 0, -1), // 1 day ago
-		},
+	transactions, err := h.repo.GetAll(ctx)
+	if err != nil {
+		return handler.Response{}, fmt.Errorf("failed to get all transactions: %w", err)
+	}
+
+	// Convert from []*transaction.Transaction to []transaction.Transaction for JSON response
+	transactionList := make([]transaction.Transaction, len(transactions))
+	for i, t := range transactions {
+		transactionList[i] = *t
 	}
 
 	return handler.Response{
 		Message: "Transactions retrieved successfully",
 		Service: "star-service",
-		Data:    mockTransactions,
+		Data:    transactionList,
 	}, nil
 }
 
 // GetByID retrieves a specific star transaction by its unique identifier.
-// Extracts the transaction ID from the URL path parameters and returns mock transaction data.
-// In production, this would query the database for the specific transaction record.
+// Extracts the transaction ID from the URL path parameters and queries the database.
 func (h *TransactionHandler) GetByID(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
 	idStr := request.PathParameters["id"]
 	id, err := strconv.Atoi(idStr)
@@ -115,20 +109,15 @@ func (h *TransactionHandler) GetByID(ctx context.Context, request events.APIGate
 		return handler.Response{}, fmt.Errorf("invalid transaction ID: %s", idStr)
 	}
 
-	// Mock data - in production this would come from a database lookup
-	mockTransaction := transaction.Transaction{
-		ID:          id,
-		KidID:       1,
-		Type:        transaction.TransactionTypeEarn,
-		Amount:      5,
-		Description: "Completed homework perfectly",
-		CreatedAt:   time.Now().AddDate(0, 0, -7),
+	transactionModel, err := h.repo.GetByID(ctx, id)
+	if err != nil {
+		return handler.Response{}, fmt.Errorf("failed to get transaction: %w", err)
 	}
 
 	return handler.Response{
 		Message: fmt.Sprintf("Transaction %d retrieved successfully", id),
 		Service: "star-service",
-		Data:    mockTransaction,
+		Data:    *transactionModel,
 	}, nil
 }
 
@@ -148,13 +137,16 @@ func (h *TransactionHandler) Create(ctx context.Context, request events.APIGatew
 		return handler.Response{}, fmt.Errorf("validation failed: %v", err)
 	}
 
-	// In production, save to database and get real ID
-	transactionModel.ID = 4 // Mock generated ID
+	// Save to database
+	createdTransaction, err := h.repo.Create(ctx, transactionModel)
+	if err != nil {
+		return handler.Response{}, fmt.Errorf("failed to create transaction: %w", err)
+	}
 
 	return handler.Response{
-		Message: fmt.Sprintf("Transaction created successfully: %s %d stars", transactionModel.Type, transactionModel.Amount),
+		Message: fmt.Sprintf("Transaction created successfully: %s %d stars", createdTransaction.Type, createdTransaction.Amount),
 		Service: "star-service",
-		Data:    transactionModel,
+		Data:    *createdTransaction,
 	}, nil
 }
 
@@ -180,10 +172,16 @@ func (h *TransactionHandler) Update(ctx context.Context, request events.APIGatew
 		return handler.Response{}, fmt.Errorf("validation failed: %v", err)
 	}
 
+	// Update in database
+	updatedTransaction, err := h.repo.Update(ctx, transactionModel)
+	if err != nil {
+		return handler.Response{}, fmt.Errorf("failed to update transaction: %w", err)
+	}
+
 	return handler.Response{
 		Message: fmt.Sprintf("Transaction %d updated successfully", id),
 		Service: "star-service",
-		Data:    transactionModel,
+		Data:    *updatedTransaction,
 	}, nil
 }
 
@@ -197,8 +195,10 @@ func (h *TransactionHandler) Delete(ctx context.Context, request events.APIGatew
 		return handler.Response{}, fmt.Errorf("invalid transaction ID: %s", idStr)
 	}
 
-	// In production, perform database deletion here
-	// For now, just return success
+	// Delete from database
+	if err := h.repo.Delete(ctx, id); err != nil {
+		return handler.Response{}, fmt.Errorf("failed to delete transaction: %w", err)
+	}
 
 	return handler.Response{
 		Message: fmt.Sprintf("Transaction %d deleted successfully", id),
@@ -313,11 +313,42 @@ func (h *TransactionHandler) handleAmountValidation(request events.APIGatewayPro
 	}, nil
 }
 
+var transactionHandler *TransactionHandler
+
+// initHandler initializes the transaction handler with database connection
+func initHandler() error {
+	// Load database configuration from environment variables
+	config := database.LoadConfigFromEnv()
+
+	// Create PostgreSQL repository manager
+	repoManager, err := postgres.NewRepositoryManager(&postgres.Config{
+		Host:         config.Host,
+		Port:         config.Port,
+		Database:     config.Database,
+		Username:     config.Username,
+		Password:     config.Password,
+		SSLMode:      config.SSLMode,
+		MaxOpenConns: config.MaxOpenConns,
+		MaxIdleConns: config.MaxIdleConns,
+		MaxLifetime:  config.MaxLifetime,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to initialize database: %w", err)
+	}
+
+	// Test database connection
+	if err := repoManager.Ping(context.Background()); err != nil {
+		return fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	// Create transaction handler with repository
+	transactionHandler = NewTransactionHandler(repoManager.Transactions())
+	return nil
+}
+
 // handleRequest is the main entry point for all HTTP requests to the Star Service.
-// It creates a TransactionHandler instance and delegates request processing to the shared
-// handler infrastructure, which routes to appropriate CRUD methods based on HTTP method.
+// It handles both CRUD operations and validation endpoints using the database-connected handler.
 func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	transactionHandler := &TransactionHandler{}
 	
 	// Check for custom validation endpoints
 	if strings.Contains(request.Path, "/validate/") {
@@ -327,8 +358,15 @@ func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (
 	return handler.HandleRequest(ctx, request, transactionHandler)
 }
 
-// main initializes and starts the AWS Lambda function handler.
+// main initializes the database connection and starts the AWS Lambda function handler.
 // This function is called when the Lambda container starts up.
 func main() {
+	// Initialize handler with database connection
+	if err := initHandler(); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to initialize star service: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Start Lambda handler
 	lambda.Start(handleRequest)
 }

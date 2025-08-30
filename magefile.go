@@ -23,6 +23,7 @@ var services = []string{
 	"kid-service",
 	"caregiver-service",
 	"star-service",
+	"migration-service",
 }
 
 // Build all services for deployment
@@ -60,6 +61,11 @@ func (Build) Star() error {
 	return buildService("star-service")
 }
 
+// Build Migration service
+func (Build) Migration() error {
+	return buildService("migration-service")
+}
+
 // Build Kid service for local development
 func (Build) KidLocal() error {
 	return buildServiceLocal("kid-service")
@@ -73,6 +79,11 @@ func (Build) CaregiverLocal() error {
 // Build Star service for local development
 func (Build) StarLocal() error {
 	return buildServiceLocal("star-service")
+}
+
+// Build Migration service for local development
+func (Build) MigrationLocal() error {
+	return buildServiceLocal("migration-service")
 }
 
 // Build all services for local development
@@ -167,6 +178,38 @@ func (Deploy) Star() error {
 	return deployService("star-service")
 }
 
+// Deploy Migration service
+func (Deploy) Migration() error {
+	mg.Deps(Build.Migration)
+	return deployService("migration-service")
+}
+
+// Deploy infrastructure only
+func (Deploy) Infrastructure() error {
+	fmt.Println("Deploying infrastructure...")
+	
+	cmd := exec.Command("serverless", "deploy", "--verbose")
+	cmd.Dir = "."
+	cmd.Env = append(os.Environ(), "SLS_CONFIG_FILE=serverless-infrastructure.yml")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+
+// Deploy logging infrastructure
+func (Deploy) Logging() error {
+	fmt.Println("Deploying logging infrastructure...")
+	
+	cmd := exec.Command("serverless", "deploy", "--verbose")
+	cmd.Dir = "."
+	cmd.Env = append(os.Environ(), "SLS_CONFIG_FILE=serverless-logging.yml")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+
 func deployService(service string) error {
 	servicePath := filepath.Join("services", service)
 	fmt.Printf("Deploying service: %s from %s\n", service, servicePath)
@@ -177,6 +220,50 @@ func deployService(service string) error {
 	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
+}
+
+type Migration mg.Namespace
+
+// Deploy infrastructure and migration service
+func (Migration) Deploy() error {
+	fmt.Println("Deploying database infrastructure and migration service...")
+	
+	// First deploy infrastructure
+	if err := (Deploy{}).Infrastructure(); err != nil {
+		return fmt.Errorf("failed to deploy infrastructure: %w", err)
+	}
+	
+	// Then deploy migration service
+	if err := (Deploy{}).Migration(); err != nil {
+		return fmt.Errorf("failed to deploy migration service: %w", err)
+	}
+	
+	return nil
+}
+
+// Run migrations via deployed Lambda function
+func (Migration) Migrate() error {
+	fmt.Println("Running database migrations...")
+	// This would call the deployed Lambda function
+	// For now, we'll use local execution
+	return sh.RunV("curl", "-X", "POST", "-H", "Content-Type: application/json", 
+		"https://api.gateway.url/migrations/migrate")
+}
+
+// Rollback migrations via deployed Lambda function
+func (Migration) Rollback() error {
+	fmt.Println("Rolling back database migrations...")
+	// This would call the deployed Lambda function
+	return sh.RunV("curl", "-X", "POST", "-H", "Content-Type: application/json",
+		"https://api.gateway.url/migrations/rollback")
+}
+
+// Check migration status
+func (Migration) Status() error {
+	fmt.Println("Checking migration status...")
+	// This would call the deployed Lambda function
+	return sh.RunV("curl", "-X", "GET", "-H", "Content-Type: application/json",
+		"https://api.gateway.url/migrations/status")
 }
 
 type Test mg.Namespace
