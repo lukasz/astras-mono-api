@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Astras API - Kid Service
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: provided.al2
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        STAGE: local
+
+Resources:
+  # Kid Service API Gateway and Lambda
+  KidServiceApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: local
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+
+  KidFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: bin/kid-service/
+      Handler: bootstrap
+      Events:
+        GetAllKids:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KidServiceApi
+            Path: /kids
+            Method: GET
+        CreateKid:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KidServiceApi
+            Path: /kids
+            Method: POST
+        GetKidById:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KidServiceApi
+            Path: /kids/{id}
+            Method: GET
+        UpdateKid:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KidServiceApi
+            Path: /kids/{id}
+            Method: PUT
+        DeleteKid:
+          Type: Api
+          Properties:
+            RestApiId: !Ref KidServiceApi
+            Path: /kids/{id}
+            Method: DELETE
+
+Outputs:
+  KidServiceApi:
+    Description: "API Gateway endpoint URL for Kid Service"
+    Value: !Sub "https://${KidServiceApi}.execute-api.${AWS::Region}.amazonaws.com/local/"
+    
+  KidServiceApiLocal:
+    Description: "Local API Gateway endpoint URL for Kid Service"
+    Value: "http://localhost:3000/"
