@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Astras API - Kid Service
+Description: Astras API - Kid and Caregiver Services
 
 Globals:
   Function:
@@ -60,6 +60,65 @@ Resources:
             Path: /kids/{id}
             Method: DELETE
 
+  # Caregiver Service API Gateway and Lambda
+  CaregiverServiceApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: local
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+
+  CaregiverFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: bin/caregiver-service/
+      Handler: bootstrap
+      Events:
+        GetAllCaregivers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CaregiverServiceApi
+            Path: /caregivers
+            Method: GET
+        CreateCaregiver:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CaregiverServiceApi
+            Path: /caregivers
+            Method: POST
+        GetCaregiverById:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CaregiverServiceApi
+            Path: /caregivers/{id}
+            Method: GET
+        UpdateCaregiver:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CaregiverServiceApi
+            Path: /caregivers/{id}
+            Method: PUT
+        DeleteCaregiver:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CaregiverServiceApi
+            Path: /caregivers/{id}
+            Method: DELETE
+        ValidateEmail:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CaregiverServiceApi
+            Path: /validate/email
+            Method: POST
+        ValidateRelationship:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CaregiverServiceApi
+            Path: /validate/relationship
+            Method: POST
+
 Outputs:
   KidServiceApi:
     Description: "API Gateway endpoint URL for Kid Service"
@@ -68,3 +127,11 @@ Outputs:
   KidServiceApiLocal:
     Description: "Local API Gateway endpoint URL for Kid Service"
     Value: "http://localhost:3000/"
+
+  CaregiverServiceApi:
+    Description: "API Gateway endpoint URL for Caregiver Service"
+    Value: !Sub "https://${CaregiverServiceApi}.execute-api.${AWS::Region}.amazonaws.com/local/"
+    
+  CaregiverServiceApiLocal:
+    Description: "Local API Gateway endpoint URL for Caregiver Service"
+    Value: "http://localhost:3001/"
