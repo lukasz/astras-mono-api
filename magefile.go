@@ -60,6 +60,35 @@ func (Build) Star() error {
 	return buildService("star-service")
 }
 
+// Build Kid service for local development
+func (Build) KidLocal() error {
+	return buildServiceLocal("kid-service")
+}
+
+// Build Caregiver service for local development
+func (Build) CaregiverLocal() error {
+	return buildServiceLocal("caregiver-service")
+}
+
+// Build Star service for local development
+func (Build) StarLocal() error {
+	return buildServiceLocal("star-service")
+}
+
+// Build all services for local development
+func (Build) AllLocal() error {
+	fmt.Println("Building all services for local development...")
+
+	for _, service := range services {
+		if err := buildServiceLocal(service); err != nil {
+			return fmt.Errorf("failed to build %s locally: %w", service, err)
+		}
+	}
+
+	fmt.Println("All services built successfully for local development!")
+	return nil
+}
+
 func buildService(service string) error {
 	servicePath := filepath.Join("cmd", service)
 	outputPath := filepath.Join("bin", service, "bootstrap")
@@ -76,6 +105,24 @@ func buildService(service string) error {
 	}
 
 	fmt.Printf("Building %s -> %s\n", servicePath, outputPath)
+	return sh.RunWithV(env, "go", "build", "-ldflags", "-s -w", "-o", outputPath, "./"+servicePath)
+}
+
+func buildServiceLocal(service string) error {
+	servicePath := filepath.Join("cmd", service)
+	outputPath := filepath.Join("bin", service, "bootstrap")
+
+	// Create output directory
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+		return fmt.Errorf("failed to create output directory: %w", err)
+	}
+
+	// Build for local OS (no cross-compilation)
+	env := map[string]string{
+		"CGO_ENABLED": "0",
+	}
+
+	fmt.Printf("Building %s for local development -> %s\n", servicePath, outputPath)
 	return sh.RunWithV(env, "go", "build", "-ldflags", "-s -w", "-o", outputPath, "./"+servicePath)
 }
 
@@ -220,10 +267,14 @@ func Services() error {
 // Default target
 func Default() {
 	fmt.Println("Available targets:")
-	fmt.Println("  mage build:all        - Build all services")
+	fmt.Println("  mage build:all        - Build all services (for AWS Lambda)")
+	fmt.Println("  mage build:allLocal   - Build all services (for local development)")
 	fmt.Println("  mage build:kid        - Build kid service")
+	fmt.Println("  mage build:kidLocal   - Build kid service (for local development)")
 	fmt.Println("  mage build:caregiver  - Build caregiver service")
+	fmt.Println("  mage build:caregiverLocal - Build caregiver service (for local development)")
 	fmt.Println("  mage build:star       - Build star service")
+	fmt.Println("  mage build:starLocal  - Build star service (for local development)")
 	fmt.Println("  mage deploy:all       - Deploy all services")
 	fmt.Println("  mage deploy:kid       - Deploy kid service")
 	fmt.Println("  mage deploy:caregiver - Deploy caregiver service")
