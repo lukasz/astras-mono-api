@@ -1,6 +1,6 @@
 // Package main implements the Caregiver Service AWS Lambda function.
-// This service manages caregivers and guardians in the Astras system, providing
-// full CRUD operations for parent/guardian profiles through a RESTful API.
+// This service manages caregivers/guardians in the Astras system, providing
+// full CRUD operations and validation endpoints through a RESTful API interface.
 package main
 
 import (
@@ -15,37 +15,51 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 
 	"github.com/lukasz/astras-mono-api/internal/handler"
-	"github.com/lukasz/astras-mono-api/internal/models"
+	"github.com/lukasz/astras-mono-api/internal/models/caregiver"
 )
 
 // CaregiverRequest represents the payload for creating or updating a caregiver.
 // Used for parsing JSON requests in POST and PUT operations.
 type CaregiverRequest struct {
-	Name         string `json:"name,omitempty"`         // Caregiver's full name
+	Name         string `json:"name,omitempty"`         // Caregiver's name
 	Email        string `json:"email,omitempty"`        // Contact email address
 	Relationship string `json:"relationship,omitempty"` // Relationship to child
 }
 
+// ValidationRequest represents the payload for validation endpoints.
+// Used for validating individual fields from frontend.
+type ValidationRequest struct {
+	Email        string `json:"email,omitempty"`        // Email to validate
+	Relationship string `json:"relationship,omitempty"` // Relationship to validate
+}
+
+// ValidationResponse represents the response from validation endpoints.
+type ValidationResponse struct {
+	Valid   bool     `json:"valid"`             // Whether the value is valid
+	Message string   `json:"message,omitempty"` // Error message if invalid
+	Options []string `json:"options,omitempty"` // Valid options (for relationships)
+}
+
 // ToCaregiver converts a CaregiverRequest to a Caregiver model with generated fields.
 // Sets timestamps and can accept an optional ID for updates.
-func (cr *CaregiverRequest) ToCaregiver(id ...int) (*models.Caregiver, error) {
-	caregiver := &models.Caregiver{
+func (cr *CaregiverRequest) ToCaregiver(id ...int) (*caregiver.Caregiver, error) {
+	caregiverModel := &caregiver.Caregiver{
 		Name:         strings.TrimSpace(cr.Name),
-		Email:        strings.TrimSpace(strings.ToLower(cr.Email)),
-		Relationship: strings.TrimSpace(strings.ToLower(cr.Relationship)),
+		Email:        strings.TrimSpace(cr.Email),
+		Relationship: strings.TrimSpace(cr.Relationship),
 		CreatedAt:    time.Now(),
 	}
 
 	if len(id) > 0 && id[0] > 0 {
-		caregiver.ID = id[0]
-		caregiver.UpdatedAt = time.Now()
+		caregiverModel.ID = id[0]
+		caregiverModel.UpdatedAt = time.Now()
 	}
 
-	if err := caregiver.Validate(); err != nil {
+	if err := caregiverModel.Validate(); err != nil {
 		return nil, err
 	}
 
-	return caregiver, nil
+	return caregiverModel, nil
 }
 
 // CaregiverHandler implements the handler.Handler interface for caregiver-specific operations.
@@ -57,20 +71,20 @@ type CaregiverHandler struct{}
 // query a database or external service.
 func (h *CaregiverHandler) GetAll(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
 	// Mock data - in production this would come from a database
-	mockCaregivers := []models.Caregiver{
+	mockCaregivers := []caregiver.Caregiver{
 		{
 			ID:           1,
-			Name:         "John Smith",
-			Email:        "john.smith@example.com",
+			Name:         "Sarah Johnson",
+			Email:        "sarah.johnson@example.com",
 			Relationship: "parent",
 			CreatedAt:    time.Now().AddDate(0, -3, 0), // 3 months ago
 		},
 		{
 			ID:           2,
-			Name:         "Jane Doe",
-			Email:        "jane.doe@example.com",
+			Name:         "Mike Smith",
+			Email:        "mike.smith@example.com",
 			Relationship: "guardian",
-			CreatedAt:    time.Now().AddDate(0, -2, 0), // 2 months ago
+			CreatedAt:    time.Now().AddDate(0, -1, 0), // 1 month ago
 		},
 	}
 
@@ -92,10 +106,10 @@ func (h *CaregiverHandler) GetByID(ctx context.Context, request events.APIGatewa
 	}
 
 	// Mock data - in production this would come from a database lookup
-	mockCaregiver := models.Caregiver{
+	mockCaregiver := caregiver.Caregiver{
 		ID:           id,
-		Name:         "John Smith",
-		Email:        "john.smith@example.com",
+		Name:         "Sarah Johnson",
+		Email:        "sarah.johnson@example.com",
 		Relationship: "parent",
 		CreatedAt:    time.Now().AddDate(0, -3, 0),
 	}
@@ -118,18 +132,18 @@ func (h *CaregiverHandler) Create(ctx context.Context, request events.APIGateway
 	}
 
 	// Convert request to model and validate
-	caregiver, err := caregiverRequest.ToCaregiver()
+	caregiverModel, err := caregiverRequest.ToCaregiver()
 	if err != nil {
 		return handler.Response{}, fmt.Errorf("validation failed: %v", err)
 	}
 
 	// In production, save to database and get real ID
-	caregiver.ID = 3 // Mock generated ID
+	caregiverModel.ID = 3 // Mock generated ID
 
 	return handler.Response{
-		Message: fmt.Sprintf("Caregiver %s created successfully", caregiver.Name),
+		Message: fmt.Sprintf("Caregiver %s created successfully", caregiverModel.Name),
 		Service: "caregiver-service",
-		Data:    caregiver,
+		Data:    caregiverModel,
 	}, nil
 }
 
@@ -150,7 +164,7 @@ func (h *CaregiverHandler) Update(ctx context.Context, request events.APIGateway
 	}
 
 	// Convert request to model with existing ID and validate
-	caregiver, err := caregiverRequest.ToCaregiver(id)
+	caregiverModel, err := caregiverRequest.ToCaregiver(id)
 	if err != nil {
 		return handler.Response{}, fmt.Errorf("validation failed: %v", err)
 	}
@@ -158,7 +172,7 @@ func (h *CaregiverHandler) Update(ctx context.Context, request events.APIGateway
 	return handler.Response{
 		Message: fmt.Sprintf("Caregiver %d updated successfully", id),
 		Service: "caregiver-service",
-		Data:    caregiver,
+		Data:    caregiverModel,
 	}, nil
 }
 
@@ -181,11 +195,104 @@ func (h *CaregiverHandler) Delete(ctx context.Context, request events.APIGateway
 	}, nil
 }
 
+// ValidateEmail handles email validation requests from frontend.
+// POST /validate/email with {"email": "test@example.com"}
+func (h *CaregiverHandler) ValidateEmail(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
+	var validationReq ValidationRequest
+	if err := json.Unmarshal([]byte(request.Body), &validationReq); err != nil {
+		return handler.Response{}, fmt.Errorf("invalid JSON format: %v", err)
+	}
+
+	err := caregiver.ValidateEmail(validationReq.Email)
+	response := ValidationResponse{
+		Valid: err == nil,
+	}
+	
+	if err != nil {
+		response.Message = err.Error()
+	}
+
+	return handler.Response{
+		Message: "Email validation completed",
+		Service: "caregiver-service",
+		Data:    response,
+	}, nil
+}
+
+// ValidateRelationship handles relationship validation requests from frontend.
+// POST /validate/relationship with {"relationship": "parent"}
+func (h *CaregiverHandler) ValidateRelationship(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
+	var validationReq ValidationRequest
+	if err := json.Unmarshal([]byte(request.Body), &validationReq); err != nil {
+		return handler.Response{}, fmt.Errorf("invalid JSON format: %v", err)
+	}
+
+	err := caregiver.ValidateRelationship(validationReq.Relationship)
+	response := ValidationResponse{
+		Valid:   err == nil,
+		Options: caregiver.GetValidRelationships(),
+	}
+	
+	if err != nil {
+		response.Message = err.Error()
+	}
+
+	return handler.Response{
+		Message: "Relationship validation completed",
+		Service: "caregiver-service",
+		Data:    response,
+	}, nil
+}
+
 // handleRequest is the main entry point for all HTTP requests to the Caregiver Service.
-// It creates a CaregiverHandler instance and delegates request processing to the shared
-// handler infrastructure, which routes to appropriate CRUD methods based on HTTP method.
+// It creates a CaregiverHandler instance and handles both CRUD operations and validation endpoints.
 func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	caregiverHandler := &CaregiverHandler{}
+
+	// Handle validation endpoints
+	if strings.HasPrefix(request.Path, "/validate/") {
+		var response handler.Response
+		var err error
+		
+		switch {
+		case strings.Contains(request.Path, "/validate/email"):
+			response, err = caregiverHandler.ValidateEmail(ctx, request)
+		case strings.Contains(request.Path, "/validate/relationship"):
+			response, err = caregiverHandler.ValidateRelationship(ctx, request)
+		default:
+			return events.APIGatewayProxyResponse{
+				StatusCode: 404,
+				Headers: map[string]string{
+					"Content-Type": "application/json",
+					"Access-Control-Allow-Origin": "*",
+				},
+				Body: `{"message": "validation endpoint not found", "service": "caregiver-service"}`,
+			}, nil
+		}
+		
+		if err != nil {
+			return events.APIGatewayProxyResponse{
+				StatusCode: 400,
+				Headers: map[string]string{
+					"Content-Type": "application/json",
+					"Access-Control-Allow-Origin": "*",
+				},
+				Body: fmt.Sprintf(`{"message": "%s", "service": "caregiver-service"}`, err.Error()),
+			}, nil
+		}
+		
+		responseJSON, _ := json.Marshal(response)
+		return events.APIGatewayProxyResponse{
+			StatusCode: 200,
+			Headers: map[string]string{
+				"Content-Type": "application/json",
+				"Access-Control-Allow-Origin": "*",
+			},
+			Body: string(responseJSON),
+		}, nil
+	}
+
+	// Handle standard CRUD operations
 	return handler.HandleRequest(ctx, request, caregiverHandler)
 }
 
