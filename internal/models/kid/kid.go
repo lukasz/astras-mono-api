@@ -1,5 +1,5 @@
-// Package models provides shared data structures for the Astras system.
-package models
+// Package kid provides the Kid model and related functionality for the Astras system.
+package kid
 
 import (
 	"encoding/json"

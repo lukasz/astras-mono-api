@@ -1,5 +1,5 @@
-// Package models provides shared data structures for the Astras system.
-package models
+// Package star provides the Star model and related functionality for the Astras system.
+package star
 
 import (
 	"errors"

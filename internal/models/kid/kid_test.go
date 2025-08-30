@@ -1,11 +1,11 @@
-package models
+package kid
 
 import (
 	"encoding/json"
 	"testing"
 	"time"
 
-	"github.com/lukasz/astras-mono-api/internal/models/testdata"
+	"github.com/lukasz/astras-mono-api/internal/models/kid/testdata"
 )
 
 const (
