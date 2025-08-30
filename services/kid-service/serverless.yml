@@ -27,7 +27,6 @@ functions:
     package:
       patterns:
         - '../../bin/kid-service/bootstrap'
-      excludeDevDependencies: false
     events:
       - httpApi:
           path: /kids
@@ -53,8 +52,6 @@ package:
 custom:
   stage: ${opt:stage, self:provider.stage, 'dev'}
 
-plugins:
-  - serverless-offline
 
 resources:
   Resources:
