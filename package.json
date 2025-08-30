@@ -6,7 +6,7 @@
   "scripts": {
     "build": "mage build:all",
     "build:kid": "mage build:kid",
-    "build:caregiver": "mage build:caregiver", 
+    "build:caregiver": "mage build:caregiver",
     "build:star": "mage build:star",
     "deploy": "mage deploy:all",
     "deploy:kid": "mage deploy:kid",
@@ -28,10 +28,7 @@
   ],
   "author": "Lukasz",
   "license": "MIT",
-  "devDependencies": {
-    "serverless": "^3.38.0",
-    "serverless-offline": "^13.3.0"
-  },
+  "devDependencies": {},
   "engines": {
     "node": ">=18.0.0"
   },
