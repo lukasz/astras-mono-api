@@ -1,0 +1,58 @@
+{
+  "KidFunction": {
+    "STAGE": "local",
+    "ENVIRONMENT": "local",
+    "DB_HOST": "astras-postgres",
+    "DB_PORT": "5432",
+    "DB_NAME": "astras",
+    "DB_USER": "postgres", 
+    "DB_PASSWORD": "password",
+    "DB_SSL_MODE": "disable",
+    "DB_MAX_OPEN_CONNS": "10",
+    "DB_MAX_IDLE_CONNS": "2",
+    "DB_MAX_LIFETIME": "5m",
+    "LOG_LEVEL": "DEBUG"
+  },
+  "CaregiverFunction": {
+    "STAGE": "local",
+    "ENVIRONMENT": "local", 
+    "DB_HOST": "astras-postgres",
+    "DB_PORT": "5432",
+    "DB_NAME": "astras",
+    "DB_USER": "postgres",
+    "DB_PASSWORD": "password", 
+    "DB_SSL_MODE": "disable",
+    "DB_MAX_OPEN_CONNS": "10",
+    "DB_MAX_IDLE_CONNS": "2",
+    "DB_MAX_LIFETIME": "5m",
+    "LOG_LEVEL": "DEBUG"
+  },
+  "StarFunction": {
+    "STAGE": "local",
+    "ENVIRONMENT": "local",
+    "DB_HOST": "astras-postgres", 
+    "DB_PORT": "5432",
+    "DB_NAME": "astras",
+    "DB_USER": "postgres",
+    "DB_PASSWORD": "password",
+    "DB_SSL_MODE": "disable", 
+    "DB_MAX_OPEN_CONNS": "10",
+    "DB_MAX_IDLE_CONNS": "2",
+    "DB_MAX_LIFETIME": "5m",
+    "LOG_LEVEL": "DEBUG"
+  },
+  "MigrationFunction": {
+    "STAGE": "local",
+    "ENVIRONMENT": "local",
+    "DB_HOST": "astras-postgres",
+    "DB_PORT": "5432", 
+    "DB_NAME": "astras",
+    "DB_USER": "postgres",
+    "DB_PASSWORD": "password",
+    "DB_SSL_MODE": "disable",
+    "DB_MAX_OPEN_CONNS": "10", 
+    "DB_MAX_IDLE_CONNS": "2",
+    "DB_MAX_LIFETIME": "5m",
+    "LOG_LEVEL": "DEBUG"
+  }
+}

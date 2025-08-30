@@ -55,6 +55,11 @@ build/
 *.log
 logs/
 
+# Local logging infrastructure
+docker-compose.logging.yml
+fluent-bit.conf
+logstash/
+
 # Test coverage
 coverage/
 *.coverage

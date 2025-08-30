@@ -11,6 +11,8 @@ Globals:
     Environment:
       Variables:
         STAGE: local
+        ENVIRONMENT: local
+        LOG_LEVEL: DEBUG
 
 Resources:
   # Kid Service API Gateway and Lambda
