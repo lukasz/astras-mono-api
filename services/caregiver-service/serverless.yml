@@ -1,0 +1,65 @@
+service: astras-caregiver-service
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: provided.al2
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'eu-central-1'}
+  architecture: x86_64
+  environment:
+    STAGE: ${self:provider.stage}
+  
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: '*'
+
+functions:
+  caregiver:
+    handler: bootstrap
+    package:
+      patterns:
+        - '../../bin/caregiver-service/bootstrap'
+      excludeDevDependencies: false
+    events:
+      - httpApi:
+          path: /caregivers
+          method: get
+      - httpApi:
+          path: /caregivers
+          method: post
+      - httpApi:
+          path: /caregivers/{id}
+          method: get
+      - httpApi:
+          path: /caregivers/{id}
+          method: put
+      - httpApi:
+          path: /caregivers/{id}
+          method: delete
+
+package:
+  patterns:
+    - '!./**'
+    - '../../bin/caregiver-service/bootstrap'
+
+custom:
+  stage: ${opt:stage, self:provider.stage, 'dev'}
+
+plugins:
+  - serverless-offline
+
+resources:
+  Resources:
+    CaregiverServiceLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/astras-caregiver-service-${self:provider.stage}-caregiver
+        RetentionInDays: 14

@@ -1,0 +1,65 @@
+service: astras-star-service
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: provided.al2
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'eu-central-1'}
+  architecture: x86_64
+  environment:
+    STAGE: ${self:provider.stage}
+  
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: '*'
+
+functions:
+  star:
+    handler: bootstrap
+    package:
+      patterns:
+        - '../../bin/star-service/bootstrap'
+      excludeDevDependencies: false
+    events:
+      - httpApi:
+          path: /stars
+          method: get
+      - httpApi:
+          path: /stars
+          method: post
+      - httpApi:
+          path: /stars/{id}
+          method: get
+      - httpApi:
+          path: /stars/{id}
+          method: put
+      - httpApi:
+          path: /stars/{id}
+          method: delete
+
+package:
+  patterns:
+    - '!./**'
+    - '../../bin/star-service/bootstrap'
+
+custom:
+  stage: ${opt:stage, self:provider.stage, 'dev'}
+
+plugins:
+  - serverless-offline
+
+resources:
+  Resources:
+    StarServiceLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/astras-star-service-${self:provider.stage}-star
+        RetentionInDays: 14

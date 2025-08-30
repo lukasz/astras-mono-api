@@ -1,0 +1,65 @@
+service: astras-kid-service
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: provided.al2
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'eu-central-1'}
+  architecture: x86_64
+  environment:
+    STAGE: ${self:provider.stage}
+  
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: '*'
+
+functions:
+  kid:
+    handler: bootstrap
+    package:
+      patterns:
+        - '../../bin/kid-service/bootstrap'
+      excludeDevDependencies: false
+    events:
+      - httpApi:
+          path: /kids
+          method: get
+      - httpApi:
+          path: /kids
+          method: post
+      - httpApi:
+          path: /kids/{id}
+          method: get
+      - httpApi:
+          path: /kids/{id}
+          method: put
+      - httpApi:
+          path: /kids/{id}
+          method: delete
+
+package:
+  patterns:
+    - '!./**'
+    - '../../bin/kid-service/bootstrap'
+
+custom:
+  stage: ${opt:stage, self:provider.stage, 'dev'}
+
+plugins:
+  - serverless-offline
+
+resources:
+  Resources:
+    KidServiceLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/astras-kid-service-${self:provider.stage}-kid
+        RetentionInDays: 14

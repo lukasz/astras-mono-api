@@ -28,6 +28,18 @@ This is the astras-mono-api project - a Go monorepo for API services deployed to
 - Create descriptive commit messages
 - Keep commits focused and atomic
 - Don't commit directly unless explicitly asked
+- **ALWAYS check before committing** that commonly recognized files/folders/patterns that should NOT be committed are properly excluded:
+  - `node_modules/`, `vendor/` (dependency directories)
+  - `.env`, `.env.*` (environment/secret files)
+  - Build artifacts: `bin/`, `dist/`, `build/`, `target/`
+  - IDE files: `.vscode/`, `.idea/`, `*.swp`
+  - OS files: `.DS_Store`, `Thumbs.db`
+  - Logs: `*.log`, `logs/`
+  - Temporary files: `*.tmp`, `*.temp`
+  - Database files: `*.db`, `*.sqlite`
+  - Compiled binaries and executables
+  - Large media files that should use Git LFS
+  - API keys, certificates, or any sensitive data
 
 ### Project Structure
 - [Add project structure details here as the project develops]
@@ -49,14 +61,102 @@ This is the astras-mono-api project - a Go monorepo for API services deployed to
 - [Document required environment variables here]
 - Use `.env` files for local development
 
+### Build System
+- Use Mage for building and deployment automation
+- Install Mage: `go install github.com/magefile/mage@latest`
+- Use `mage -l` to list available targets
+- Build targets:
+  - `mage build:all` - Build all services
+  - `mage build:kid` - Build kid service
+  - `mage build:caregiver` - Build caregiver service
+  - `mage build:star` - Build star service
+
 ### Deployment
 - Use Serverless Framework for AWS Lambda deployment
 - Each service has its own `serverless.yml` configuration
-- Build binaries for Linux before deployment
+- Build binaries for Linux before deployment using Mage
 - Use AWS API Gateway for HTTP endpoints
+- Deploy targets:
+  - `mage deploy:all` - Deploy all services
+  - `mage deploy:kid` - Deploy kid service
+  - `mage deploy:caregiver` - Deploy caregiver service
+  - `mage deploy:star` - Deploy star service
+
+### Common Mage Commands
+```bash
+# List available targets
+mage -l
+
+# Build all services
+mage build:all
+
+# Build specific service
+mage build:kid
+mage build:caregiver
+mage build:star
+
+# Deploy all services
+mage deploy:all
+
+# Deploy specific service
+mage deploy:kid
+mage deploy:caregiver
+mage deploy:star
+
+# Test
+mage test:all
+mage test:coverage
+
+# Clean
+mage clean:all
+mage clean:build
+mage clean:deploy
+
+# Code quality
+mage format
+mage lint
+mage tidy
+
+# List services
+mage services
+```
+
+### npm Scripts (Alternative)
+```bash
+# Alternative using npm scripts
+npm run build          # Build all services
+npm run build:kid      # Build kid service
+npm run deploy         # Deploy all services
+npm run deploy:kid     # Deploy kid service
+npm test              # Run tests
+npm run clean         # Clean artifacts
+```
+
+## Project Structure
+```
+astras-mono-api/
+├── cmd/
+│   ├── kid-service/     # Kid service Lambda handler
+│   ├── caregiver-service/ # Caregiver service Lambda handler
+│   └── star-service/    # Star service Lambda handler
+├── services/
+│   ├── kid-service/     # Kid service Serverless config
+│   ├── caregiver-service/ # Caregiver service Serverless config
+│   └── star-service/    # Star service Serverless config
+├── internal/            # Private application code
+├── pkg/                 # Public library code
+├── bin/                 # Built binaries (ignored by git)
+├── magefile.go         # Mage build configuration
+└── package.json        # Node.js dependencies for Serverless
+```
+
+## Services
+- **kid-service**: Manages children/kids in the system
+- **caregiver-service**: Manages caregivers and guardians
+- **star-service**: Manages star rewards and achievements
 
 ## Notes
 - This is a monorepo structure - consider impacts across services
-- Each service should be in its own directory under cmd/
-- Shared packages should be in internal/ or pkg/
-- [Add project-specific notes and reminders here]
+- Each service is built as a standalone Lambda function
+- Services communicate via API calls when needed
+- Shared code should be placed in internal/ or pkg/ directories
