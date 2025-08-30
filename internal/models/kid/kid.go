@@ -26,11 +26,11 @@ const (
 // Kid represents a child in the Astras system with personal information
 // and validation rules for data integrity.
 type Kid struct {
-	ID        int       `json:"id"`                   // Unique identifier
-	Name      string    `json:"name"`                 // Full name of the child
-	Birthdate time.Time `json:"birthdate"`            // Date of birth
-	CreatedAt time.Time `json:"created_at"`           // Record creation timestamp
-	UpdatedAt time.Time `json:"updated_at,omitempty"` // Last update timestamp
+	ID        int       `json:"id" db:"id"`                           // Unique identifier
+	Name      string    `json:"name" db:"name"`                       // Full name of the child
+	Birthdate time.Time `json:"birthdate" db:"birthdate"`             // Date of birth
+	CreatedAt time.Time `json:"created_at" db:"created_at"`           // Record creation timestamp
+	UpdatedAt time.Time `json:"updated_at,omitempty" db:"updated_at"` // Last update timestamp
 }
 
 // Age calculates and returns the current age of the kid based on their birthdate.

@@ -54,8 +54,32 @@ This is the astras-mono-api project - a Go monorepo for API services deployed to
   - API keys, certificates, or any sensitive data
 
 ### Project Structure
-- [Add project structure details here as the project develops]
+```
+astras-mono-api/
+├── cmd/                    # Application entry points
+│   ├── kid-service/       # Kid service Lambda handler ✅ Database integrated
+│   ├── caregiver-service/ # Caregiver service Lambda handler
+│   └── star-service/      # Star service Lambda handler
+├── internal/              # Private application code
+│   ├── database/         # Database layer
+│   │   ├── interfaces/   # Repository interfaces
+│   │   └── postgres/     # PostgreSQL implementations
+│   ├── handler/          # Common handler utilities
+│   └── models/           # Domain models
+│       ├── kid/          # Kid model with birthdate logic
+│       ├── caregiver/    # Caregiver model
+│       └── star/         # Transaction model
+├── database/             # Database files
+│   ├── migrations/       # SQL migrations
+│   └── schema.sql       # Complete schema
+├── services/             # Serverless configurations
+├── bin/                  # Built binaries (ignored by git)
+├── env.json             # Environment variables for SAM local
+├── docker-compose.yml   # PostgreSQL for local development
+└── template.yaml        # AWS SAM template
+```
 - Follow standard Go project layout for monorepo
+- Database layer uses repository pattern with clean interfaces
 
 ### API Conventions
 - Use RESTful API design patterns
@@ -67,16 +91,43 @@ This is the astras-mono-api project - a Go monorepo for API services deployed to
 - Check go.mod before adding new dependencies
 - Use Go modules for dependency management
 - Prefer standard library when possible
+- **Avoid Node.js dependencies** - Keep project focused on Go ecosystem
 - Document any new dependencies added
 
+### Database & Persistence
+- **PostgreSQL with pgx/v5 driver** - Modern, high-performance PostgreSQL driver
+- **Repository pattern implementation** - Clean separation between business logic and data access
+- **sqlx integration** - Enhanced SQL functionality with struct mapping
+- **Database configuration via environment variables**:
+  - `DB_HOST` - Database host (default: localhost, use `astras-postgres` for Docker)
+  - `DB_PORT` - Database port (default: 5432)  
+  - `DB_NAME` - Database name (default: astras)
+  - `DB_USER` - Database username (default: postgres)
+  - `DB_PASSWORD` - Database password (default: password for local)
+  - `DB_SSL_MODE` - SSL mode (default: disable)
+  - `DB_MAX_OPEN_CONNS` - Max open connections (default: 25)
+  - `DB_MAX_IDLE_CONNS` - Max idle connections (default: 5)
+  - `DB_MAX_LIFETIME` - Connection max lifetime (default: 5m)
+- **Database migrations** in `database/migrations/` directory with up/down scripts
+- **Local development setup**:
+  ```bash
+  # Start PostgreSQL with sample data
+  docker-compose up -d
+  
+  # Run SAM with database connection
+  sam local start-api --env-vars env.json --docker-network astras-mono-api_astras-network --port 3000
+  ```
+
 ### Environment Variables
-- [Document required environment variables here]
+- Database configuration (see Database & Persistence section)
 - Use `.env` files for local development
+- Never commit secrets or credentials to repository
 
 ### Build System
-- Use Mage for building and deployment automation
+- **Use Mage exclusively** - Single build tool approach following Go best practices
 - Install Mage: `go install github.com/magefile/mage@latest`
 - Use `mage -l` to list available targets
+- **No npm/Node.js wrappers** - Keep toolchain minimal and focused on Go ecosystem
 - Build targets:
   - `mage build:all` - Build all services
   - `mage build:kid` - Build kid service
@@ -165,16 +216,6 @@ sam local generate-event apigateway aws-proxy
 sam validate
 ```
 
-### npm Scripts (Alternative)
-```bash
-# Alternative using npm scripts
-npm run build          # Build all services
-npm run build:kid      # Build kid service
-npm run deploy         # Deploy all services
-npm run deploy:kid     # Deploy kid service
-npm test              # Run tests
-npm run clean         # Clean artifacts
-```
 
 ## Project Structure
 ```
@@ -197,7 +238,6 @@ astras-mono-api/
 │   └── README.md        # Postman collections documentation
 ├── LOCAL_DEVELOPMENT.md # Local development guide
 ├── magefile.go         # Mage build configuration
-└── package.json        # Node.js dependencies for Serverless
 ```
 
 ## Services

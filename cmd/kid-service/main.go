@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -14,6 +15,9 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 
+	"github.com/lukasz/astras-mono-api/internal/database"
+	"github.com/lukasz/astras-mono-api/internal/database/interfaces"
+	"github.com/lukasz/astras-mono-api/internal/database/postgres"
 	"github.com/lukasz/astras-mono-api/internal/handler"
 	"github.com/lukasz/astras-mono-api/internal/models/kid"
 )
@@ -21,19 +25,18 @@ import (
 // KidRequest represents the payload for creating or updating a kid.
 // Used for parsing JSON requests in POST and PUT operations.
 type KidRequest struct {
-	Name      string `json:"name,omitempty"`      // Child's name
-	Birthdate string `json:"birthdate,omitempty"` // Date of birth in YYYY-MM-DD format
+	Name string `json:"name,omitempty"` // Child's name
+	Age  int    `json:"age,omitempty"`  // Child's age
 }
 
 // ToKid converts a KidRequest to a Kid model with generated fields.
-// Sets timestamps and can accept an optional ID for updates.
+// Converts age to approximate birthdate and sets timestamps.
+// Accepts an optional ID for updates.
 func (kr *KidRequest) ToKid(id ...int) (*kid.Kid, error) {
-	// Parse birthdate from string
-	birthdate, err := time.Parse("2006-01-02", kr.Birthdate)
-	if err != nil {
-		return nil, fmt.Errorf("invalid birthdate format (use YYYY-MM-DD): %v", err)
-	}
-
+	// Convert age to approximate birthdate (assuming birthday hasn't occurred this year)
+	now := time.Now()
+	birthdate := time.Date(now.Year()-kr.Age, now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	
 	kidModel := &kid.Kid{
 		Name:      strings.TrimSpace(kr.Name),
 		Birthdate: birthdate,
@@ -54,38 +57,40 @@ func (kr *KidRequest) ToKid(id ...int) (*kid.Kid, error) {
 
 // KidHandler implements the handler.Handler interface for kid-specific operations.
 // This struct contains all the business logic for managing kids in the system.
-type KidHandler struct{}
+type KidHandler struct {
+	repo interfaces.KidRepository
+}
+
+// NewKidHandler creates a new kid handler with database repository
+func NewKidHandler(repo interfaces.KidRepository) *KidHandler {
+	return &KidHandler{
+		repo: repo,
+	}
+}
 
 // GetAll retrieves and returns a list of all kids in the system.
-// Returns mock data for demonstration purposes - in production this would
-// query a database or external service.
+// Uses the database repository to fetch all kids from PostgreSQL.
 func (h *KidHandler) GetAll(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
-	// Mock data - in production this would come from a database
-	mockKids := []kid.Kid{
-		{
-			ID:        1,
-			Name:      "Alice Johnson",
-			Birthdate: time.Now().AddDate(-8, 0, 0),  // 8 years old
-			CreatedAt: time.Now().AddDate(0, -2, 0), // 2 months ago
-		},
-		{
-			ID:        2,
-			Name:      "Bob Smith",
-			Birthdate: time.Now().AddDate(-10, 0, 0), // 10 years old
-			CreatedAt: time.Now().AddDate(0, -1, 0),  // 1 month ago
-		},
+	kids, err := h.repo.GetAll(ctx)
+	if err != nil {
+		return handler.Response{}, fmt.Errorf("failed to get all kids: %w", err)
+	}
+
+	// Convert from []*kid.Kid to []kid.Kid for JSON response
+	kidList := make([]kid.Kid, len(kids))
+	for i, k := range kids {
+		kidList[i] = *k
 	}
 
 	return handler.Response{
 		Message: "Kids retrieved successfully",
 		Service: "kid-service",
-		Data:    mockKids,
+		Data:    kidList,
 	}, nil
 }
 
 // GetByID retrieves a specific kid by their unique identifier.
-// Extracts the kid ID from the URL path parameters and returns mock kid data.
-// In production, this would query the database for the specific kid record.
+// Extracts the kid ID from the URL path parameters and queries the database.
 func (h *KidHandler) GetByID(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
 	idStr := request.PathParameters["id"]
 	id, err := strconv.Atoi(idStr)
@@ -93,18 +98,15 @@ func (h *KidHandler) GetByID(ctx context.Context, request events.APIGatewayProxy
 		return handler.Response{}, fmt.Errorf("invalid kid ID: %s", idStr)
 	}
 
-	// Mock data - in production this would come from a database lookup
-	mockKid := kid.Kid{
-		ID:        id,
-		Name:      "Alice Johnson",
-		Birthdate: time.Now().AddDate(-8, 0, 0), // 8 years old
-		CreatedAt: time.Now().AddDate(0, -2, 0),
+	kidModel, err := h.repo.GetByID(ctx, id)
+	if err != nil {
+		return handler.Response{}, fmt.Errorf("failed to get kid: %w", err)
 	}
 
 	return handler.Response{
 		Message: fmt.Sprintf("Kid %d retrieved successfully", id),
 		Service: "kid-service",
-		Data:    mockKid,
+		Data:    *kidModel,
 	}, nil
 }
 
@@ -124,13 +126,16 @@ func (h *KidHandler) Create(ctx context.Context, request events.APIGatewayProxyR
 		return handler.Response{}, fmt.Errorf("validation failed: %v", err)
 	}
 
-	// In production, save to database and get real ID
-	kidModel.ID = 3 // Mock generated ID
+	// Save to database
+	createdKid, err := h.repo.Create(ctx, kidModel)
+	if err != nil {
+		return handler.Response{}, fmt.Errorf("failed to create kid: %w", err)
+	}
 
 	return handler.Response{
-		Message: fmt.Sprintf("Kid %s created successfully", kidModel.Name),
+		Message: fmt.Sprintf("Kid %s created successfully", createdKid.Name),
 		Service: "kid-service",
-		Data:    kidModel,
+		Data:    *createdKid,
 	}, nil
 }
 
@@ -156,10 +161,16 @@ func (h *KidHandler) Update(ctx context.Context, request events.APIGatewayProxyR
 		return handler.Response{}, fmt.Errorf("validation failed: %v", err)
 	}
 
+	// Update in database
+	updatedKid, err := h.repo.Update(ctx, kidModel)
+	if err != nil {
+		return handler.Response{}, fmt.Errorf("failed to update kid: %w", err)
+	}
+
 	return handler.Response{
 		Message: fmt.Sprintf("Kid %d updated successfully", id),
 		Service: "kid-service",
-		Data:    kidModel,
+		Data:    *updatedKid,
 	}, nil
 }
 
@@ -173,8 +184,10 @@ func (h *KidHandler) Delete(ctx context.Context, request events.APIGatewayProxyR
 		return handler.Response{}, fmt.Errorf("invalid kid ID: %s", idStr)
 	}
 
-	// In production, perform database deletion here
-	// For now, just return success
+	// Delete from database
+	if err := h.repo.Delete(ctx, id); err != nil {
+		return handler.Response{}, fmt.Errorf("failed to delete kid: %w", err)
+	}
 
 	return handler.Response{
 		Message: fmt.Sprintf("Kid %d deleted successfully", id),
@@ -182,16 +195,54 @@ func (h *KidHandler) Delete(ctx context.Context, request events.APIGatewayProxyR
 	}, nil
 }
 
+var kidHandler *KidHandler
+
+// initHandler initializes the kid handler with database connection
+func initHandler() error {
+	// Load database configuration from environment variables
+	config := database.LoadConfigFromEnv()
+
+	// Create PostgreSQL repository manager
+	repoManager, err := postgres.NewRepositoryManager(&postgres.Config{
+		Host:         config.Host,
+		Port:         config.Port,
+		Database:     config.Database,
+		Username:     config.Username,
+		Password:     config.Password,
+		SSLMode:      config.SSLMode,
+		MaxOpenConns: config.MaxOpenConns,
+		MaxIdleConns: config.MaxIdleConns,
+		MaxLifetime:  config.MaxLifetime,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to initialize database: %w", err)
+	}
+
+	// Test database connection
+	if err := repoManager.Ping(context.Background()); err != nil {
+		return fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	// Create kid handler with repository
+	kidHandler = NewKidHandler(repoManager.Kids())
+	return nil
+}
+
 // handleRequest is the main entry point for all HTTP requests to the Kid Service.
-// It creates a KidHandler instance and delegates request processing to the shared
-// handler infrastructure, which routes to appropriate CRUD methods based on HTTP method.
+// It delegates request processing to the kid handler with database connectivity.
 func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	kidHandler := &KidHandler{}
 	return handler.HandleRequest(ctx, request, kidHandler)
 }
 
-// main initializes and starts the AWS Lambda function handler.
+// main initializes the database connection and starts the AWS Lambda function handler.
 // This function is called when the Lambda container starts up.
 func main() {
+	// Initialize handler with database connection
+	if err := initHandler(); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to initialize kid service: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Start Lambda handler
 	lambda.Start(handleRequest)
 }
