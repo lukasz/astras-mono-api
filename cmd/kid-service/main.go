@@ -15,7 +15,7 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 
 	"github.com/lukasz/astras-mono-api/internal/handler"
-	"github.com/lukasz/astras-mono-api/internal/models"
+	"github.com/lukasz/astras-mono-api/internal/models/kid"
 )
 
 // KidRequest represents the payload for creating or updating a kid.
@@ -27,29 +27,29 @@ type KidRequest struct {
 
 // ToKid converts a KidRequest to a Kid model with generated fields.
 // Sets timestamps and can accept an optional ID for updates.
-func (kr *KidRequest) ToKid(id ...int) (*models.Kid, error) {
+func (kr *KidRequest) ToKid(id ...int) (*kid.Kid, error) {
 	// Parse birthdate from string
 	birthdate, err := time.Parse("2006-01-02", kr.Birthdate)
 	if err != nil {
 		return nil, fmt.Errorf("invalid birthdate format (use YYYY-MM-DD): %v", err)
 	}
 
-	kid := &models.Kid{
+	kidModel := &kid.Kid{
 		Name:      strings.TrimSpace(kr.Name),
 		Birthdate: birthdate,
 		CreatedAt: time.Now(),
 	}
 
 	if len(id) > 0 && id[0] > 0 {
-		kid.ID = id[0]
-		kid.UpdatedAt = time.Now()
+		kidModel.ID = id[0]
+		kidModel.UpdatedAt = time.Now()
 	}
 
-	if err := kid.Validate(); err != nil {
+	if err := kidModel.Validate(); err != nil {
 		return nil, err
 	}
 
-	return kid, nil
+	return kidModel, nil
 }
 
 // KidHandler implements the handler.Handler interface for kid-specific operations.
@@ -61,7 +61,7 @@ type KidHandler struct{}
 // query a database or external service.
 func (h *KidHandler) GetAll(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
 	// Mock data - in production this would come from a database
-	mockKids := []models.Kid{
+	mockKids := []kid.Kid{
 		{
 			ID:        1,
 			Name:      "Alice Johnson",
@@ -94,7 +94,7 @@ func (h *KidHandler) GetByID(ctx context.Context, request events.APIGatewayProxy
 	}
 
 	// Mock data - in production this would come from a database lookup
-	mockKid := models.Kid{
+	mockKid := kid.Kid{
 		ID:        id,
 		Name:      "Alice Johnson",
 		Birthdate: time.Now().AddDate(-8, 0, 0), // 8 years old
@@ -119,18 +119,18 @@ func (h *KidHandler) Create(ctx context.Context, request events.APIGatewayProxyR
 	}
 
 	// Convert request to model and validate
-	kid, err := kidRequest.ToKid()
+	kidModel, err := kidRequest.ToKid()
 	if err != nil {
 		return handler.Response{}, fmt.Errorf("validation failed: %v", err)
 	}
 
 	// In production, save to database and get real ID
-	kid.ID = 3 // Mock generated ID
+	kidModel.ID = 3 // Mock generated ID
 
 	return handler.Response{
-		Message: fmt.Sprintf("Kid %s created successfully", kid.Name),
+		Message: fmt.Sprintf("Kid %s created successfully", kidModel.Name),
 		Service: "kid-service",
-		Data:    kid,
+		Data:    kidModel,
 	}, nil
 }
 
@@ -151,7 +151,7 @@ func (h *KidHandler) Update(ctx context.Context, request events.APIGatewayProxyR
 	}
 
 	// Convert request to model with existing ID and validate
-	kid, err := kidRequest.ToKid(id)
+	kidModel, err := kidRequest.ToKid(id)
 	if err != nil {
 		return handler.Response{}, fmt.Errorf("validation failed: %v", err)
 	}
@@ -159,7 +159,7 @@ func (h *KidHandler) Update(ctx context.Context, request events.APIGatewayProxyR
 	return handler.Response{
 		Message: fmt.Sprintf("Kid %d updated successfully", id),
 		Service: "kid-service",
-		Data:    kid,
+		Data:    kidModel,
 	}, nil
 }
 
