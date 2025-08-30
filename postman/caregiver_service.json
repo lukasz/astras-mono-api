@@ -1,0 +1,239 @@
+{
+  "info": {
+    "name": "Astras Caregiver Service - SAM Local",
+    "description": "Collection for testing the Caregiver Service API with validation endpoints running locally via AWS SAM",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "CRUD Operations",
+      "item": [
+        {
+          "name": "Get All Caregivers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:3000/caregivers",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "3000",
+              "path": ["caregivers"]
+            },
+            "description": "Retrieves all caregivers from the system"
+          }
+        },
+        {
+          "name": "Get Caregiver by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:3000/caregivers/1",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "3000",
+              "path": ["caregivers", "1"]
+            },
+            "description": "Retrieves a specific caregiver by their ID"
+          }
+        },
+        {
+          "name": "Create Caregiver",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Emma Wilson\",\n  \"email\": \"emma.wilson@example.com\",\n  \"relationship\": \"parent\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:3000/caregivers",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "3000",
+              "path": ["caregivers"]
+            },
+            "description": "Creates a new caregiver in the system"
+          }
+        },
+        {
+          "name": "Update Caregiver",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Emma Wilson Updated\",\n  \"email\": \"emma.wilson.updated@example.com\",\n  \"relationship\": \"guardian\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:3000/caregivers/1",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "3000",
+              "path": ["caregivers", "1"]
+            },
+            "description": "Updates an existing caregiver's information"
+          }
+        },
+        {
+          "name": "Delete Caregiver",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://127.0.0.1:3000/caregivers/1",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "3000",
+              "path": ["caregivers", "1"]
+            },
+            "description": "Deletes a caregiver from the system"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Validation Endpoints",
+      "item": [
+        {
+          "name": "Validate Email - Valid",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:3000/validate/email",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "3000",
+              "path": ["validate", "email"]
+            },
+            "description": "Validates a correct email address"
+          }
+        },
+        {
+          "name": "Validate Email - Invalid",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"invalid-email\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:3000/validate/email",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "3000",
+              "path": ["validate", "email"]
+            },
+            "description": "Validates an incorrect email address"
+          }
+        },
+        {
+          "name": "Validate Relationship - Valid",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"relationship\": \"parent\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:3000/validate/relationship",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "3000",
+              "path": ["validate", "relationship"]
+            },
+            "description": "Validates a correct relationship value"
+          }
+        },
+        {
+          "name": "Validate Relationship - Invalid",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"relationship\": \"friend\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:3000/validate/relationship",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "3000",
+              "path": ["validate", "relationship"]
+            },
+            "description": "Validates an incorrect relationship value - returns valid options"
+          }
+        },
+        {
+          "name": "Get Valid Relationships",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"relationship\": \"\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:3000/validate/relationship",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "3000",
+              "path": ["validate", "relationship"]
+            },
+            "description": "Gets list of valid relationship options for frontend dropdown"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:3000",
+      "type": "string"
+    }
+  ]
+}
