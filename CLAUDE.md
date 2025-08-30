@@ -28,6 +28,8 @@ This is the astras-mono-api project - a Go monorepo for API services deployed to
 - Create descriptive commit messages
 - Keep commits focused and atomic
 - Don't commit directly unless explicitly asked
+- **Split commits logically**: When committing multiple changes, create separate atomic commits for each logical change based on conversation history
+- **Do NOT add AI-generated attribution** to commit messages unless specifically requested
 - **ALWAYS check before committing** that commonly recognized files/folders/patterns that should NOT be committed are properly excluded:
   - `node_modules/`, `vendor/` (dependency directories)
   - `.env`, `.env.*` (environment/secret files)
