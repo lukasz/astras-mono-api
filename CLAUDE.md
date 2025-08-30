@@ -1,5 +1,10 @@
 # Claude Instructions for astras-mono-api
 
+## Communication Guidelines
+- **Always respond in the same language the user writes in** - If user writes in Polish, respond in Polish. If user writes in English, respond in English.
+- **Documentation and code comments should always be in English** regardless of conversation language
+- Keep responses concise and direct
+
 ## Project Overview
 This is the astras-mono-api project - a Go monorepo for API services deployed to AWS using the Serverless Framework.
 
@@ -78,11 +83,25 @@ This is the astras-mono-api project - a Go monorepo for API services deployed to
   - `mage build:caregiver` - Build caregiver service
   - `mage build:star` - Build star service
 
+### Local Development
+- **Use AWS SAM CLI for local testing** - Provides accurate simulation of AWS serverless architecture
+- Install SAM CLI: `brew tap aws/tap && brew install aws-sam-cli`
+- Local development workflow:
+  1. Build service: `export PATH=$PATH:$(go env GOPATH)/bin && mage build:kid`
+  2. Start SAM local: `sam local start-api --port 3000`
+  3. Test endpoints: http://127.0.0.1:3000/kids
+  4. Use Postman collection: `postman_collection.json`
+- **Key files for local dev**:
+  - `template.yaml` - SAM template with API Gateway + Lambda configuration
+  - `LOCAL_DEVELOPMENT.md` - Detailed local development guide
+  - `postman_collection.json` - Ready-to-import Postman collection
+
 ### Deployment
 - Use Serverless Framework for AWS Lambda deployment
 - Each service has its own `serverless.yml` configuration
 - Build binaries for Linux before deployment using Mage
 - Use AWS API Gateway for HTTP endpoints
+- **Local testing with SAM before deployment is recommended**
 - Deploy targets:
   - `mage deploy:all` - Deploy all services
   - `mage deploy:kid` - Deploy kid service
@@ -128,6 +147,24 @@ mage tidy
 mage services
 ```
 
+### Local SAM Commands
+```bash
+# Start local API Gateway + Lambda
+sam local start-api --port 3000
+
+# Start local API with debug logs
+sam local start-api --port 3000 --debug
+
+# Invoke specific function directly
+sam local invoke KidFunction --event test-event.json
+
+# Generate sample events for testing
+sam local generate-event apigateway aws-proxy
+
+# Validate SAM template
+sam validate
+```
+
 ### npm Scripts (Alternative)
 ```bash
 # Alternative using npm scripts
@@ -153,6 +190,9 @@ astras-mono-api/
 ├── internal/            # Private application code
 ├── pkg/                 # Public library code
 ├── bin/                 # Built binaries (ignored by git)
+├── template.yaml        # AWS SAM template for local development
+├── postman_collection.json # Postman collection for API testing
+├── LOCAL_DEVELOPMENT.md # Local development guide
 ├── magefile.go         # Mage build configuration
 └── package.json        # Node.js dependencies for Serverless
 ```
@@ -167,3 +207,6 @@ astras-mono-api/
 - Each service is built as a standalone Lambda function
 - Services communicate via API calls when needed
 - Shared code should be placed in internal/ or pkg/ directories
+- **Local development uses AWS SAM CLI** for accurate serverless simulation
+- Use `template.yaml` for SAM configuration, `serverless.yml` for production deployment
+- See `LOCAL_DEVELOPMENT.md` for detailed local development instructions
