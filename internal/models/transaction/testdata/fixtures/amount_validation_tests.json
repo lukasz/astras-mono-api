@@ -1,0 +1,65 @@
+{
+  "amountValidationTests": [
+    {
+      "name": "valid minimum amount",
+      "amount": 1,
+      "expectError": false
+    },
+    {
+      "name": "valid small amount",
+      "amount": 5,
+      "expectError": false
+    },
+    {
+      "name": "valid medium amount",
+      "amount": 25,
+      "expectError": false
+    },
+    {
+      "name": "valid large amount",
+      "amount": 50,
+      "expectError": false
+    },
+    {
+      "name": "valid maximum amount",
+      "amount": 100,
+      "expectError": false
+    },
+    {
+      "name": "zero amount",
+      "amount": 0,
+      "expectError": true,
+      "errorMessage": "amount must be at least 1"
+    },
+    {
+      "name": "negative small amount",
+      "amount": -1,
+      "expectError": true,
+      "errorMessage": "amount must be at least 1"
+    },
+    {
+      "name": "negative large amount",
+      "amount": -50,
+      "expectError": true,
+      "errorMessage": "amount must be at least 1"
+    },
+    {
+      "name": "amount over maximum by one",
+      "amount": 101,
+      "expectError": true,
+      "errorMessage": "amount cannot exceed 100 stars"
+    },
+    {
+      "name": "amount significantly over maximum",
+      "amount": 500,
+      "expectError": true,
+      "errorMessage": "amount cannot exceed 100 stars"
+    },
+    {
+      "name": "amount extremely over maximum",
+      "amount": 1000,
+      "expectError": true,
+      "errorMessage": "amount cannot exceed 100 stars"
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+{
+  "caregiverValidationTests": [
+    {
+      "name": "valid caregiver",
+      "caregiver": {
+        "name": "John Smith",
+        "email": "john.smith@example.com",
+        "relationship": "parent"
+      },
+      "expectError": false
+    },
+    {
+      "name": "empty name",
+      "caregiver": {
+        "name": "",
+        "email": "john.smith@example.com", 
+        "relationship": "parent"
+      },
+      "expectError": true,
+      "errorMessage": "name is required and cannot be empty"
+    },
+    {
+      "name": "short name",
+      "caregiver": {
+        "name": "A",
+        "email": "john.smith@example.com",
+        "relationship": "parent"
+      },
+      "expectError": true,
+      "errorMessage": "name must be at least 2 characters long"
+    },
+    {
+      "name": "name too long",
+      "caregiver": {
+        "name": "This is a very long name that exceeds one hundred characters and should trigger validation error because names cannot be this long in our system rules",
+        "email": "john.smith@example.com",
+        "relationship": "parent"
+      },
+      "expectError": true,
+      "errorMessage": "name cannot exceed 100 characters"
+    },
+    {
+      "name": "empty email",
+      "caregiver": {
+        "name": "John Smith",
+        "email": "",
+        "relationship": "parent"
+      },
+      "expectError": true,
+      "errorMessage": "email is required and cannot be empty"
+    },
+    {
+      "name": "invalid email format",
+      "caregiver": {
+        "name": "John Smith", 
+        "email": "invalid-email",
+        "relationship": "parent"
+      },
+      "expectError": true,
+      "errorMessage": "email format is invalid"
+    },
+    {
+      "name": "email missing @ symbol",
+      "caregiver": {
+        "name": "John Smith",
+        "email": "johnsmith.example.com",
+        "relationship": "parent"
+      },
+      "expectError": true,
+      "errorMessage": "email format is invalid"
+    },
+    {
+      "name": "email missing domain",
+      "caregiver": {
+        "name": "John Smith",
+        "email": "john@",
+        "relationship": "parent"
+      },
+      "expectError": true,
+      "errorMessage": "email format is invalid"
+    },
+    {
+      "name": "email missing local part",
+      "caregiver": {
+        "name": "John Smith",
+        "email": "@example.com",
+        "relationship": "parent"
+      },
+      "expectError": true,
+      "errorMessage": "email format is invalid"
+    },
+    {
+      "name": "invalid relationship",
+      "caregiver": {
+        "name": "John Smith",
+        "email": "john.smith@example.com",
+        "relationship": "friend"
+      },
+      "expectError": true,
+      "errorMessage": "relationship must be one of: parent, guardian, grandparent, relative, caregiver"
+    },
+    {
+      "name": "empty relationship",
+      "caregiver": {
+        "name": "John Smith",
+        "email": "john.smith@example.com",
+        "relationship": ""
+      },
+      "expectError": true,
+      "errorMessage": "relationship is required"
+    },
+    {
+      "name": "valid guardian relationship",
+      "caregiver": {
+        "name": "Sarah Wilson",
+        "email": "sarah.wilson@example.com",
+        "relationship": "guardian"
+      },
+      "expectError": false
+    },
+    {
+      "name": "valid grandparent relationship",
+      "caregiver": {
+        "name": "Robert Johnson",
+        "email": "robert.johnson@example.com",
+        "relationship": "grandparent"
+      },
+      "expectError": false
+    },
+    {
+      "name": "valid relative relationship",
+      "caregiver": {
+        "name": "Mary Brown",
+        "email": "mary.brown@example.com",
+        "relationship": "relative"
+      },
+      "expectError": false
+    },
+    {
+      "name": "valid caregiver relationship",
+      "caregiver": {
+        "name": "David Taylor",
+        "email": "david.taylor@example.com",
+        "relationship": "caregiver"
+      },
+      "expectError": false
+    }
+  ]
+}

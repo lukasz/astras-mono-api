@@ -1,0 +1,88 @@
+{
+  "typeValidationTests": [
+    {
+      "name": "valid earn type",
+      "type": "earn",
+      "expectError": false
+    },
+    {
+      "name": "valid spend type",
+      "type": "spend",
+      "expectError": false
+    },
+    {
+      "name": "valid earn uppercase",
+      "type": "EARN",
+      "expectError": false
+    },
+    {
+      "name": "valid spend uppercase",
+      "type": "SPEND",
+      "expectError": false
+    },
+    {
+      "name": "valid earn mixed case",
+      "type": "Earn",
+      "expectError": false
+    },
+    {
+      "name": "valid spend mixed case",
+      "type": "SpEnD",
+      "expectError": false
+    },
+    {
+      "name": "empty type",
+      "type": "",
+      "expectError": true,
+      "errorMessage": "type must be either 'earn' or 'spend'"
+    },
+    {
+      "name": "invalid type reward",
+      "type": "reward",
+      "expectError": true,
+      "errorMessage": "type must be either 'earn' or 'spend'"
+    },
+    {
+      "name": "invalid type purchase",
+      "type": "purchase",
+      "expectError": true,
+      "errorMessage": "type must be either 'earn' or 'spend'"
+    },
+    {
+      "name": "invalid type give",
+      "type": "give",
+      "expectError": true,
+      "errorMessage": "type must be either 'earn' or 'spend'"
+    },
+    {
+      "name": "invalid type take",
+      "type": "take",
+      "expectError": true,
+      "errorMessage": "type must be either 'earn' or 'spend'"
+    },
+    {
+      "name": "invalid type add",
+      "type": "add",
+      "expectError": true,
+      "errorMessage": "type must be either 'earn' or 'spend'"
+    },
+    {
+      "name": "invalid type remove",
+      "type": "remove",
+      "expectError": true,
+      "errorMessage": "type must be either 'earn' or 'spend'"
+    },
+    {
+      "name": "invalid type numeric",
+      "type": "123",
+      "expectError": true,
+      "errorMessage": "type must be either 'earn' or 'spend'"
+    },
+    {
+      "name": "invalid type special characters",
+      "type": "earn!",
+      "expectError": true,
+      "errorMessage": "type must be either 'earn' or 'spend'"
+    }
+  ]
+}

@@ -1,0 +1,173 @@
+{
+  "transactionValidationTests": [
+    {
+      "name": "valid earn transaction",
+      "transaction": {
+        "kid_id": 1,
+        "type": "earn",
+        "amount": 5,
+        "description": "Completed homework perfectly"
+      },
+      "expectError": false
+    },
+    {
+      "name": "valid spend transaction",
+      "transaction": {
+        "kid_id": 2,
+        "type": "spend",
+        "amount": 10,
+        "description": "Bought sticker reward"
+      },
+      "expectError": false
+    },
+    {
+      "name": "valid transaction with maximum amount",
+      "transaction": {
+        "kid_id": 1,
+        "type": "earn",
+        "amount": 100,
+        "description": "Perfect behavior for a week"
+      },
+      "expectError": false
+    },
+    {
+      "name": "valid transaction with minimum amount",
+      "transaction": {
+        "kid_id": 3,
+        "type": "spend",
+        "amount": 1,
+        "description": "Small reward"
+      },
+      "expectError": false
+    },
+    {
+      "name": "missing kid_id",
+      "transaction": {
+        "kid_id": 0,
+        "type": "earn",
+        "amount": 5,
+        "description": "Completed homework"
+      },
+      "expectError": true,
+      "errorMessage": "kid_id is required"
+    },
+    {
+      "name": "negative kid_id",
+      "transaction": {
+        "kid_id": -1,
+        "type": "earn",
+        "amount": 5,
+        "description": "Completed homework"
+      },
+      "expectError": true,
+      "errorMessage": "kid_id must be greater than 0"
+    },
+    {
+      "name": "missing type",
+      "transaction": {
+        "kid_id": 1,
+        "type": "",
+        "amount": 5,
+        "description": "Completed homework"
+      },
+      "expectError": true,
+      "errorMessage": "type is required"
+    },
+    {
+      "name": "invalid type",
+      "transaction": {
+        "kid_id": 1,
+        "type": "invalid",
+        "amount": 5,
+        "description": "Completed homework"
+      },
+      "expectError": true,
+      "errorMessage": "type must be either 'earn' or 'spend'"
+    },
+    {
+      "name": "zero amount",
+      "transaction": {
+        "kid_id": 1,
+        "type": "earn",
+        "amount": 0,
+        "description": "Completed homework"
+      },
+      "expectError": true,
+      "errorMessage": "amount must be at least 1"
+    },
+    {
+      "name": "negative amount",
+      "transaction": {
+        "kid_id": 1,
+        "type": "earn",
+        "amount": -5,
+        "description": "Completed homework"
+      },
+      "expectError": true,
+      "errorMessage": "amount must be at least 1"
+    },
+    {
+      "name": "amount too large",
+      "transaction": {
+        "kid_id": 1,
+        "type": "earn",
+        "amount": 101,
+        "description": "Completed homework"
+      },
+      "expectError": true,
+      "errorMessage": "amount cannot exceed 100 stars"
+    },
+    {
+      "name": "missing description",
+      "transaction": {
+        "kid_id": 1,
+        "type": "earn",
+        "amount": 5,
+        "description": ""
+      },
+      "expectError": true,
+      "errorMessage": "description is required"
+    },
+    {
+      "name": "description too long",
+      "transaction": {
+        "kid_id": 1,
+        "type": "earn",
+        "amount": 5,
+        "description": "This is a very long description that exceeds the maximum allowed length of 255 characters and should trigger a validation error because descriptions cannot be this long in our system rules for transactions and this text is intentionally made very long to test the validation"
+      },
+      "expectError": true,
+      "errorMessage": "description cannot exceed 255 characters"
+    },
+    {
+      "name": "valid earn with uppercase type",
+      "transaction": {
+        "kid_id": 1,
+        "type": "EARN",
+        "amount": 5,
+        "description": "Completed homework perfectly"
+      },
+      "expectError": false
+    },
+    {
+      "name": "valid spend with mixed case type",
+      "transaction": {
+        "kid_id": 2,
+        "type": "SpEnD",
+        "amount": 3,
+        "description": "Bought toy reward"
+      },
+      "expectError": false
+    },
+    {
+      "name": "valid transaction with whitespace in description",
+      "transaction": {
+        "kid_id": 1,
+        "type": "earn",
+        "amount": 8,
+        "description": "  Cleaned room thoroughly  "
+      },
+      "expectError": false
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "relationshipValidationTests": [
+    {
+      "name": "valid parent",
+      "relationship": "parent",
+      "expectError": false
+    },
+    {
+      "name": "valid guardian",
+      "relationship": "guardian",
+      "expectError": false
+    },
+    {
+      "name": "valid grandparent",
+      "relationship": "grandparent",
+      "expectError": false
+    },
+    {
+      "name": "valid relative",
+      "relationship": "relative",
+      "expectError": false
+    },
+    {
+      "name": "valid caregiver",
+      "relationship": "caregiver",
+      "expectError": false
+    },
+    {
+      "name": "valid guardian uppercase",
+      "relationship": "GUARDIAN",
+      "expectError": false
+    },
+    {
+      "name": "valid parent mixed case",
+      "relationship": "Parent",
+      "expectError": false
+    },
+    {
+      "name": "valid caregiver with spaces",
+      "relationship": "  caregiver  ",
+      "expectError": false
+    },
+    {
+      "name": "valid relative with leading space",
+      "relationship": " relative",
+      "expectError": false
+    },
+    {
+      "name": "valid grandparent with trailing space",
+      "relationship": "grandparent ",
+      "expectError": false
+    },
+    {
+      "name": "empty relationship",
+      "relationship": "",
+      "expectError": true,
+      "errorMessage": "relationship is required"
+    },
+    {
+      "name": "whitespace only relationship",
+      "relationship": "   ",
+      "expectError": true,
+      "errorMessage": "relationship is required"
+    },
+    {
+      "name": "invalid relationship friend",
+      "relationship": "friend",
+      "expectError": true,
+      "errorMessage": "relationship must be one of: parent, guardian, grandparent, relative, caregiver"
+    },
+    {
+      "name": "invalid relationship sibling",
+      "relationship": "sibling",
+      "expectError": true,
+      "errorMessage": "relationship must be one of: parent, guardian, grandparent, relative, caregiver"
+    },
+    {
+      "name": "invalid relationship teacher",
+      "relationship": "teacher",
+      "expectError": true,
+      "errorMessage": "relationship must be one of: parent, guardian, grandparent, relative, caregiver"
+    },
+    {
+      "name": "invalid relationship spouse",
+      "relationship": "spouse",
+      "expectError": true,
+      "errorMessage": "relationship must be one of: parent, guardian, grandparent, relative, caregiver"
+    }
+  ]
+}

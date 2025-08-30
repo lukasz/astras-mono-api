@@ -1,0 +1,287 @@
+{
+  "info": {
+    "name": "Star Service API",
+    "description": "Collection for testing Star Transaction Service endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Transaction Management",
+      "item": [
+        {
+          "name": "Get All Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/transactions",
+              "host": ["{{base_url}}"],
+              "path": ["transactions"]
+            }
+          }
+        },
+        {
+          "name": "Create Earn Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kid_id\": 1,\n  \"type\": \"earn\",\n  \"amount\": 5,\n  \"description\": \"Completed homework perfectly\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transactions",
+              "host": ["{{base_url}}"],
+              "path": ["transactions"]
+            }
+          }
+        },
+        {
+          "name": "Create Spend Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kid_id\": 1,\n  \"type\": \"spend\",\n  \"amount\": 3,\n  \"description\": \"Bought sticker reward\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transactions",
+              "host": ["{{base_url}}"],
+              "path": ["transactions"]
+            }
+          }
+        },
+        {
+          "name": "Get Transaction by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/transactions/1",
+              "host": ["{{base_url}}"],
+              "path": ["transactions", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Transaction",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kid_id\": 1,\n  \"type\": \"earn\",\n  \"amount\": 8,\n  \"description\": \"Completed homework and cleaned room\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/transactions/1",
+              "host": ["{{base_url}}"],
+              "path": ["transactions", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Transaction",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/transactions/1",
+              "host": ["{{base_url}}"],
+              "path": ["transactions", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Validation Endpoints",
+      "item": [
+        {
+          "name": "Validate Transaction Type - Valid Earn",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"earn\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/validate/type",
+              "host": ["{{base_url}}"],
+              "path": ["validate", "type"]
+            }
+          }
+        },
+        {
+          "name": "Validate Transaction Type - Valid Spend",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"spend\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/validate/type",
+              "host": ["{{base_url}}"],
+              "path": ["validate", "type"]
+            }
+          }
+        },
+        {
+          "name": "Validate Transaction Type - Invalid",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"invalid\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/validate/type",
+              "host": ["{{base_url}}"],
+              "path": ["validate", "type"]
+            }
+          }
+        },
+        {
+          "name": "Validate Amount - Valid Small",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/validate/amount",
+              "host": ["{{base_url}}"],
+              "path": ["validate", "amount"]
+            }
+          }
+        },
+        {
+          "name": "Validate Amount - Valid Maximum",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/validate/amount",
+              "host": ["{{base_url}}"],
+              "path": ["validate", "amount"]
+            }
+          }
+        },
+        {
+          "name": "Validate Amount - Invalid Zero",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/validate/amount",
+              "host": ["{{base_url}}"],
+              "path": ["validate", "amount"]
+            }
+          }
+        },
+        {
+          "name": "Validate Amount - Invalid Over Limit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 101\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/validate/amount",
+              "host": ["{{base_url}}"],
+              "path": ["validate", "amount"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:3002",
+      "description": "Base URL for local SAM development"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: Astras API - Kid and Caregiver Services
+Description: Astras API - Kid, Caregiver, and Star Transaction Services
 
 Globals:
   Function:
@@ -119,6 +119,65 @@ Resources:
             Path: /validate/relationship
             Method: POST
 
+  # Star Service API Gateway and Lambda
+  StarServiceApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: local
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+        AllowOrigin: "'*'"
+
+  StarFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: bin/star-service/
+      Handler: bootstrap
+      Events:
+        GetAllTransactions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref StarServiceApi
+            Path: /transactions
+            Method: GET
+        CreateTransaction:
+          Type: Api
+          Properties:
+            RestApiId: !Ref StarServiceApi
+            Path: /transactions
+            Method: POST
+        GetTransactionById:
+          Type: Api
+          Properties:
+            RestApiId: !Ref StarServiceApi
+            Path: /transactions/{id}
+            Method: GET
+        UpdateTransaction:
+          Type: Api
+          Properties:
+            RestApiId: !Ref StarServiceApi
+            Path: /transactions/{id}
+            Method: PUT
+        DeleteTransaction:
+          Type: Api
+          Properties:
+            RestApiId: !Ref StarServiceApi
+            Path: /transactions/{id}
+            Method: DELETE
+        ValidateTransactionType:
+          Type: Api
+          Properties:
+            RestApiId: !Ref StarServiceApi
+            Path: /validate/type
+            Method: POST
+        ValidateAmount:
+          Type: Api
+          Properties:
+            RestApiId: !Ref StarServiceApi
+            Path: /validate/amount
+            Method: POST
+
 Outputs:
   KidServiceApi:
     Description: "API Gateway endpoint URL for Kid Service"
@@ -135,3 +194,11 @@ Outputs:
   CaregiverServiceApiLocal:
     Description: "Local API Gateway endpoint URL for Caregiver Service"
     Value: "http://localhost:3001/"
+
+  StarServiceApi:
+    Description: "API Gateway endpoint URL for Star Service"
+    Value: !Sub "https://${StarServiceApi}.execute-api.${AWS::Region}.amazonaws.com/local/"
+    
+  StarServiceApiLocal:
+    Description: "Local API Gateway endpoint URL for Star Service"
+    Value: "http://localhost:3002/"

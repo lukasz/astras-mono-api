@@ -1,6 +1,6 @@
 // Package main implements the Star Service AWS Lambda function.
-// This service manages star rewards and achievements in the Astras system,
-// tracking kids' accomplishments and providing CRUD operations for star rewards.
+// This service manages star transactions in the Astras system,
+// allowing kids to earn and spend stars through various activities.
 package main
 
 import (
@@ -15,183 +15,316 @@ import (
 	"github.com/aws/aws-lambda-go/lambda"
 
 	"github.com/lukasz/astras-mono-api/internal/handler"
-	"github.com/lukasz/astras-mono-api/internal/models"
+	"github.com/lukasz/astras-mono-api/internal/models/transaction"
 )
 
-// StarRequest represents the payload for creating or updating a star reward.
+// TransactionRequest represents the payload for creating or updating a transaction.
 // Used for parsing JSON requests in POST and PUT operations.
-type StarRequest struct {
-	KidID       int    `json:"kid_id,omitempty"`      // ID of the kid receiving the star
-	Activity    string `json:"activity,omitempty"`    // Type of activity
-	Stars       int    `json:"stars,omitempty"`       // Number of stars awarded
-	Description string `json:"description,omitempty"` // Achievement description
+type TransactionRequest struct {
+	KidID       int    `json:"kid_id,omitempty"`
+	Type        string `json:"type,omitempty"`
+	Amount      int    `json:"amount,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 
-// ToStar converts a StarRequest to a Star model with generated fields.
+// ValidationRequest represents requests to validation endpoints
+type ValidationRequest struct {
+	Type   string `json:"type,omitempty"`
+	Amount int    `json:"amount,omitempty"`
+}
+
+// ValidationResponse represents the response from validation endpoints
+type ValidationResponse struct {
+	Valid   bool   `json:"valid"`
+	Message string `json:"message,omitempty"`
+}
+
+// ToTransaction converts a TransactionRequest to a Transaction model with generated fields.
 // Sets timestamps and can accept an optional ID for updates.
-func (sr *StarRequest) ToStar(id ...int) (*models.Star, error) {
-	star := &models.Star{
-		KidID:       sr.KidID,
-		Activity:    strings.TrimSpace(strings.ToLower(sr.Activity)),
-		Stars:       sr.Stars,
-		Description: strings.TrimSpace(sr.Description),
+func (tr *TransactionRequest) ToTransaction(id ...int) (*transaction.Transaction, error) {
+	transactionModel := &transaction.Transaction{
+		KidID:       tr.KidID,
+		Type:        transaction.TransactionType(strings.TrimSpace(strings.ToLower(tr.Type))),
+		Amount:      tr.Amount,
+		Description: strings.TrimSpace(tr.Description),
 		CreatedAt:   time.Now(),
 	}
 
 	if len(id) > 0 && id[0] > 0 {
-		star.ID = id[0]
-		star.UpdatedAt = time.Now()
+		transactionModel.ID = id[0]
+		transactionModel.UpdatedAt = time.Now()
 	}
 
-	if err := star.Validate(); err != nil {
+	if err := transactionModel.Validate(); err != nil {
 		return nil, err
 	}
 
-	return star, nil
+	return transactionModel, nil
 }
 
-// StarHandler implements the handler.Handler interface for star reward operations.
-// This struct contains all the business logic for managing star rewards in the system.
-type StarHandler struct{}
+// TransactionHandler implements the handler.Handler interface for star transaction operations.
+// This struct contains all the business logic for managing star transactions in the system.
+type TransactionHandler struct{}
 
-// GetAll retrieves and returns a list of all star rewards in the system.
+// GetAll retrieves and returns a list of all star transactions in the system.
 // Returns mock data for demonstration purposes - in production this would
 // query a database or external service.
-func (h *StarHandler) GetAll(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
+func (h *TransactionHandler) GetAll(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
 	// Mock data - in production this would come from a database
-	mockStars := []models.Star{
+	mockTransactions := []transaction.Transaction{
 		{
 			ID:          1,
 			KidID:       1,
-			Activity:    "homework",
-			Stars:       5,
-			Description: "Completed math homework perfectly",
+			Type:        transaction.TransactionTypeEarn,
+			Amount:      5,
+			Description: "Completed homework perfectly",
 			CreatedAt:   time.Now().AddDate(0, 0, -7), // 7 days ago
 		},
 		{
 			ID:          2,
 			KidID:       2,
-			Activity:    "chores",
-			Stars:       3,
-			Description: "Cleaned room thoroughly",
+			Type:        transaction.TransactionTypeSpend,
+			Amount:      3,
+			Description: "Bought sticker reward",
 			CreatedAt:   time.Now().AddDate(0, 0, -3), // 3 days ago
+		},
+		{
+			ID:          3,
+			KidID:       1,
+			Type:        transaction.TransactionTypeEarn,
+			Amount:      10,
+			Description: "Cleaned room thoroughly",
+			CreatedAt:   time.Now().AddDate(0, 0, -1), // 1 day ago
 		},
 	}
 
 	return handler.Response{
-		Message: "Stars retrieved successfully",
+		Message: "Transactions retrieved successfully",
 		Service: "star-service",
-		Data:    mockStars,
+		Data:    mockTransactions,
 	}, nil
 }
 
-// GetByID retrieves a specific star reward by its unique identifier.
-// Extracts the star ID from the URL path parameters and returns mock star data.
-// In production, this would query the database for the specific star record.
-func (h *StarHandler) GetByID(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
+// GetByID retrieves a specific star transaction by its unique identifier.
+// Extracts the transaction ID from the URL path parameters and returns mock transaction data.
+// In production, this would query the database for the specific transaction record.
+func (h *TransactionHandler) GetByID(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
 	idStr := request.PathParameters["id"]
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		return handler.Response{}, fmt.Errorf("invalid star ID: %s", idStr)
+		return handler.Response{}, fmt.Errorf("invalid transaction ID: %s", idStr)
 	}
 
 	// Mock data - in production this would come from a database lookup
-	mockStar := models.Star{
+	mockTransaction := transaction.Transaction{
 		ID:          id,
 		KidID:       1,
-		Activity:    "homework",
-		Stars:       5,
-		Description: "Completed math homework perfectly",
+		Type:        transaction.TransactionTypeEarn,
+		Amount:      5,
+		Description: "Completed homework perfectly",
 		CreatedAt:   time.Now().AddDate(0, 0, -7),
 	}
 
 	return handler.Response{
-		Message: fmt.Sprintf("Star %d retrieved successfully", id),
+		Message: fmt.Sprintf("Transaction %d retrieved successfully", id),
 		Service: "star-service",
-		Data:    mockStar,
+		Data:    mockTransaction,
 	}, nil
 }
 
-// Create processes a request to add a new star reward to the system.
-// Parses the request body JSON and validates the star data before creation.
-// Returns the newly created star reward data with a generated ID.
-func (h *StarHandler) Create(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
-	var starRequest StarRequest
+// Create processes a request to add a new star transaction to the system.
+// Parses the request body JSON and validates the transaction data before creation.
+// Returns the newly created transaction data with a generated ID.
+func (h *TransactionHandler) Create(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
+	var transactionRequest TransactionRequest
 	// Parse and validate the incoming JSON request body
-	if err := json.Unmarshal([]byte(request.Body), &starRequest); err != nil {
+	if err := json.Unmarshal([]byte(request.Body), &transactionRequest); err != nil {
 		return handler.Response{}, fmt.Errorf("invalid JSON format: %v", err)
 	}
 
 	// Convert request to model and validate
-	star, err := starRequest.ToStar()
+	transactionModel, err := transactionRequest.ToTransaction()
 	if err != nil {
 		return handler.Response{}, fmt.Errorf("validation failed: %v", err)
 	}
 
 	// In production, save to database and get real ID
-	star.ID = 3 // Mock generated ID
+	transactionModel.ID = 4 // Mock generated ID
 
 	return handler.Response{
-		Message: fmt.Sprintf("Star reward created successfully for activity: %s", star.Activity),
+		Message: fmt.Sprintf("Transaction created successfully: %s %d stars", transactionModel.Type, transactionModel.Amount),
 		Service: "star-service",
-		Data:    star,
+		Data:    transactionModel,
 	}, nil
 }
 
-// Update modifies an existing star reward's information in the system.
-// Takes the star ID from URL parameters and new data from request body.
-// Returns the updated star reward data after successful modification.
-func (h *StarHandler) Update(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
+// Update modifies an existing star transaction's information in the system.
+// Takes the transaction ID from URL parameters and new data from request body.
+// Returns the updated transaction data after successful modification.
+func (h *TransactionHandler) Update(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
 	idStr := request.PathParameters["id"]
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		return handler.Response{}, fmt.Errorf("invalid star ID: %s", idStr)
+		return handler.Response{}, fmt.Errorf("invalid transaction ID: %s", idStr)
 	}
 
-	var starRequest StarRequest
+	var transactionRequest TransactionRequest
 	// Parse and validate the incoming JSON update data
-	if err := json.Unmarshal([]byte(request.Body), &starRequest); err != nil {
+	if err := json.Unmarshal([]byte(request.Body), &transactionRequest); err != nil {
 		return handler.Response{}, fmt.Errorf("invalid JSON format: %v", err)
 	}
 
 	// Convert request to model with existing ID and validate
-	star, err := starRequest.ToStar(id)
+	transactionModel, err := transactionRequest.ToTransaction(id)
 	if err != nil {
 		return handler.Response{}, fmt.Errorf("validation failed: %v", err)
 	}
 
 	return handler.Response{
-		Message: fmt.Sprintf("Star %d updated successfully", id),
+		Message: fmt.Sprintf("Transaction %d updated successfully", id),
 		Service: "star-service",
-		Data:    star,
+		Data:    transactionModel,
 	}, nil
 }
 
-// Delete removes a star reward from the system by its unique identifier.
-// Extracts the star ID from URL parameters and performs the deletion operation.
+// Delete removes a star transaction from the system by its unique identifier.
+// Extracts the transaction ID from URL parameters and performs the deletion operation.
 // Returns a confirmation message upon successful removal.
-func (h *StarHandler) Delete(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
+func (h *TransactionHandler) Delete(ctx context.Context, request events.APIGatewayProxyRequest) (handler.Response, error) {
 	idStr := request.PathParameters["id"]
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		return handler.Response{}, fmt.Errorf("invalid star ID: %s", idStr)
+		return handler.Response{}, fmt.Errorf("invalid transaction ID: %s", idStr)
 	}
 
 	// In production, perform database deletion here
 	// For now, just return success
 
 	return handler.Response{
-		Message: fmt.Sprintf("Star %d deleted successfully", id),
+		Message: fmt.Sprintf("Transaction %d deleted successfully", id),
 		Service: "star-service",
 	}, nil
 }
 
+// HandleCustomRequest handles custom validation endpoints
+func (h *TransactionHandler) HandleCustomRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	path := request.Path
+	method := request.HTTPMethod
+
+	headers := map[string]string{
+		"Content-Type":                 "application/json",
+		"Access-Control-Allow-Origin":  "*",
+		"Access-Control-Allow-Headers": "Content-Type",
+		"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+	}
+
+	if method == "OPTIONS" {
+		return events.APIGatewayProxyResponse{
+			StatusCode: 200,
+			Headers:    headers,
+		}, nil
+	}
+
+	switch {
+	case strings.HasSuffix(path, "/validate/type"):
+		return h.handleTypeValidation(request, headers)
+	case strings.HasSuffix(path, "/validate/amount"):
+		return h.handleAmountValidation(request, headers)
+	}
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: 404,
+		Headers:    headers,
+		Body:       `{"error": "endpoint not found"}`,
+	}, nil
+}
+
+// handleTypeValidation validates transaction type
+func (h *TransactionHandler) handleTypeValidation(request events.APIGatewayProxyRequest, headers map[string]string) (events.APIGatewayProxyResponse, error) {
+	var req ValidationRequest
+	if err := json.Unmarshal([]byte(request.Body), &req); err != nil {
+		response := ValidationResponse{
+			Valid:   false,
+			Message: "Invalid JSON format",
+		}
+		body, _ := json.Marshal(response)
+		return events.APIGatewayProxyResponse{
+			StatusCode: 400,
+			Headers:    headers,
+			Body:       string(body),
+		}, nil
+	}
+
+	err := transaction.ValidateTransactionType(req.Type)
+	response := ValidationResponse{
+		Valid: err == nil,
+	}
+	if err != nil {
+		response.Message = err.Error()
+	}
+
+	body, _ := json.Marshal(response)
+	statusCode := 200
+	if !response.Valid {
+		statusCode = 400
+	}
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: statusCode,
+		Headers:    headers,
+		Body:       string(body),
+	}, nil
+}
+
+// handleAmountValidation validates transaction amount
+func (h *TransactionHandler) handleAmountValidation(request events.APIGatewayProxyRequest, headers map[string]string) (events.APIGatewayProxyResponse, error) {
+	var req ValidationRequest
+	if err := json.Unmarshal([]byte(request.Body), &req); err != nil {
+		response := ValidationResponse{
+			Valid:   false,
+			Message: "Invalid JSON format",
+		}
+		body, _ := json.Marshal(response)
+		return events.APIGatewayProxyResponse{
+			StatusCode: 400,
+			Headers:    headers,
+			Body:       string(body),
+		}, nil
+	}
+
+	err := transaction.ValidateAmount(req.Amount)
+	response := ValidationResponse{
+		Valid: err == nil,
+	}
+	if err != nil {
+		response.Message = err.Error()
+	}
+
+	body, _ := json.Marshal(response)
+	statusCode := 200
+	if !response.Valid {
+		statusCode = 400
+	}
+
+	return events.APIGatewayProxyResponse{
+		StatusCode: statusCode,
+		Headers:    headers,
+		Body:       string(body),
+	}, nil
+}
+
 // handleRequest is the main entry point for all HTTP requests to the Star Service.
-// It creates a StarHandler instance and delegates request processing to the shared
+// It creates a TransactionHandler instance and delegates request processing to the shared
 // handler infrastructure, which routes to appropriate CRUD methods based on HTTP method.
 func handleRequest(ctx context.Context, request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	starHandler := &StarHandler{}
-	return handler.HandleRequest(ctx, request, starHandler)
+	transactionHandler := &TransactionHandler{}
+	
+	// Check for custom validation endpoints
+	if strings.Contains(request.Path, "/validate/") {
+		return transactionHandler.HandleCustomRequest(ctx, request)
+	}
+	
+	return handler.HandleRequest(ctx, request, transactionHandler)
 }
 
 // main initializes and starts the AWS Lambda function handler.

@@ -1,0 +1,88 @@
+{
+  "emailValidationTests": [
+    {
+      "name": "valid email",
+      "email": "test@example.com",
+      "expectError": false
+    },
+    {
+      "name": "valid email with subdomain",
+      "email": "user.name@subdomain.example.com",
+      "expectError": false
+    },
+    {
+      "name": "valid email with plus",
+      "email": "user+tag@example.com",
+      "expectError": false
+    },
+    {
+      "name": "valid email with numbers",
+      "email": "user123@example123.com",
+      "expectError": false
+    },
+    {
+      "name": "valid email with dash",
+      "email": "user-name@example-site.com",
+      "expectError": false
+    },
+    {
+      "name": "valid email with underscore",
+      "email": "user_name@example.com",
+      "expectError": false
+    },
+    {
+      "name": "empty email",
+      "email": "",
+      "expectError": true,
+      "errorMessage": "email is required and cannot be empty"
+    },
+    {
+      "name": "whitespace only email",
+      "email": "   ",
+      "expectError": true,
+      "errorMessage": "email is required and cannot be empty"
+    },
+    {
+      "name": "invalid email format",
+      "email": "invalid-email",
+      "expectError": true,
+      "errorMessage": "email format is invalid"
+    },
+    {
+      "name": "missing @ symbol",
+      "email": "testexample.com",
+      "expectError": true,
+      "errorMessage": "email format is invalid"
+    },
+    {
+      "name": "missing domain",
+      "email": "test@",
+      "expectError": true,
+      "errorMessage": "email format is invalid"
+    },
+    {
+      "name": "missing local part",
+      "email": "@example.com",
+      "expectError": true,
+      "errorMessage": "email format is invalid"
+    },
+    {
+      "name": "invalid domain",
+      "email": "test@domain",
+      "expectError": true,
+      "errorMessage": "email format is invalid"
+    },
+    {
+      "name": "double @ symbol",
+      "email": "test@@example.com",
+      "expectError": true,
+      "errorMessage": "email format is invalid"
+    },
+    {
+      "name": "spaces in email",
+      "email": "test @example.com",
+      "expectError": true,
+      "errorMessage": "email format is invalid"
+    }
+  ]
+}

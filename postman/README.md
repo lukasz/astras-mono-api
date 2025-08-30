@@ -28,6 +28,20 @@ Complete collection for the Kid Service API including:
 - `PUT /kids/{id}` - Update kid
 - `DELETE /kids/{id}` - Delete kid
 
+### ⭐ `star_service.json`
+Complete collection for the Star Transaction Service API including:
+
+**CRUD Operations:**
+- `GET /transactions` - Get all star transactions
+- `GET /transactions/{id}` - Get transaction by ID
+- `POST /transactions` - Create new transaction (earn/spend stars)
+- `PUT /transactions/{id}` - Update transaction
+- `DELETE /transactions/{id}` - Delete transaction
+
+**Validation Endpoints:**
+- `POST /validate/type` - Validate transaction type (earn/spend with case-insensitive examples)
+- `POST /validate/amount` - Validate star amounts (1-100 range validation)
+
 ## Usage
 
 ### Prerequisites
@@ -55,7 +69,7 @@ Complete collection for the Kid Service API including:
 
 ## Local Development
 Make sure you have:
-1. Built the services: `mage build:kid && mage build:caregiver`
+1. Built the services: `mage build:kid && mage build:caregiver && mage build:star`
 2. Started SAM local: `sam local start-api`
 3. Services running on http://127.0.0.1:3000
 
