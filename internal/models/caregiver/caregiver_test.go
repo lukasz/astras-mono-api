@@ -2,66 +2,32 @@ package caregiver
 
 import (
 	"testing"
+
+	"github.com/lukasz/astras-mono-api/internal/models/caregiver/testdata"
 )
 
 func TestCaregiverValidate(t *testing.T) {
-	tests := []struct {
-		name        string
-		caregiver   Caregiver
-		expectError bool
-		errorMsg    string
-	}{
-		{
-			name: "valid caregiver",
-			caregiver: Caregiver{
-				Name:         "John Smith",
-				Email:        "john.smith@example.com",
-				Relationship: "parent",
-			},
-			expectError: false,
-		},
-		{
-			name: "empty name",
-			caregiver: Caregiver{
-				Name:         "",
-				Email:        "john.smith@example.com",
-				Relationship: "parent",
-			},
-			expectError: true,
-			errorMsg:    "name is required and cannot be empty",
-		},
-		{
-			name: "invalid email",
-			caregiver: Caregiver{
-				Name:         "John Smith",
-				Email:        "invalid-email",
-				Relationship: "parent",
-			},
-			expectError: true,
-			errorMsg:    "email format is invalid",
-		},
-		{
-			name: "invalid relationship",
-			caregiver: Caregiver{
-				Name:         "John Smith",
-				Email:        "john.smith@example.com",
-				Relationship: "friend",
-			},
-			expectError: true,
-			errorMsg:    "relationship must be one of: parent, guardian, grandparent, relative, caregiver",
-		},
+	fixture, err := testdata.LoadCaregiverValidationFixture("caregiver_validation_tests.json")
+	if err != nil {
+		t.Fatalf("Failed to load test fixture: %v", err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.caregiver.Validate()
-			if tt.expectError {
+	for _, tt := range fixture.CaregiverValidationTests {
+		t.Run(tt.Name, func(t *testing.T) {
+			caregiver := Caregiver{
+				Name:         tt.Caregiver.Name,
+				Email:        tt.Caregiver.Email,
+				Relationship: RelationshipType(tt.Caregiver.Relationship),
+			}
+
+			err := caregiver.Validate()
+			if tt.ExpectError {
 				if err == nil {
 					t.Errorf("expected error but got none")
 					return
 				}
-				if err.Error() != tt.errorMsg {
-					t.Errorf("expected error message %q, got %q", tt.errorMsg, err.Error())
+				if tt.ErrorMessage != "" && err.Error() != tt.ErrorMessage {
+					t.Errorf("expected error message %q, got %q", tt.ErrorMessage, err.Error())
 				}
 			} else {
 				if err != nil {
@@ -73,75 +39,21 @@ func TestCaregiverValidate(t *testing.T) {
 }
 
 func TestValidateEmail(t *testing.T) {
-	tests := []struct {
-		name        string
-		email       string
-		expectError bool
-		errorMsg    string
-	}{
-		{
-			name:        "valid email",
-			email:       "test@example.com",
-			expectError: false,
-		},
-		{
-			name:        "valid email with subdomain",
-			email:       "user.name@subdomain.example.com",
-			expectError: false,
-		},
-		{
-			name:        "valid email with plus",
-			email:       "user+tag@example.com",
-			expectError: false,
-		},
-		{
-			name:        "empty email",
-			email:       "",
-			expectError: true,
-			errorMsg:    "email is required and cannot be empty",
-		},
-		{
-			name:        "invalid email format",
-			email:       "invalid-email",
-			expectError: true,
-			errorMsg:    "email format is invalid",
-		},
-		{
-			name:        "missing @ symbol",
-			email:       "testexample.com",
-			expectError: true,
-			errorMsg:    "email format is invalid",
-		},
-		{
-			name:        "missing domain",
-			email:       "test@",
-			expectError: true,
-			errorMsg:    "email format is invalid",
-		},
-		{
-			name:        "missing local part",
-			email:       "@example.com",
-			expectError: true,
-			errorMsg:    "email format is invalid",
-		},
-		{
-			name:        "invalid domain",
-			email:       "test@domain",
-			expectError: true,
-			errorMsg:    "email format is invalid",
-		},
+	fixture, err := testdata.LoadEmailValidationFixture("email_validation_tests.json")
+	if err != nil {
+		t.Fatalf("Failed to load test fixture: %v", err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateEmail(tt.email)
-			if tt.expectError {
+	for _, tt := range fixture.EmailValidationTests {
+		t.Run(tt.Name, func(t *testing.T) {
+			err := ValidateEmail(tt.Email)
+			if tt.ExpectError {
 				if err == nil {
 					t.Errorf("expected error but got none")
 					return
 				}
-				if err.Error() != tt.errorMsg {
-					t.Errorf("expected error message %q, got %q", tt.errorMsg, err.Error())
+				if tt.ErrorMessage != "" && err.Error() != tt.ErrorMessage {
+					t.Errorf("expected error message %q, got %q", tt.ErrorMessage, err.Error())
 				}
 			} else {
 				if err != nil {
@@ -153,51 +65,21 @@ func TestValidateEmail(t *testing.T) {
 }
 
 func TestValidateRelationship(t *testing.T) {
-	tests := []struct {
-		name         string
-		relationship string
-		expectError  bool
-		errorMsg     string
-	}{
-		{
-			name:         "valid parent",
-			relationship: "parent",
-			expectError:  false,
-		},
-		{
-			name:         "valid guardian uppercase",
-			relationship: "GUARDIAN",
-			expectError:  false,
-		},
-		{
-			name:         "valid caregiver with spaces",
-			relationship: "  caregiver  ",
-			expectError:  false,
-		},
-		{
-			name:         "empty relationship",
-			relationship: "",
-			expectError:  true,
-			errorMsg:     "relationship is required",
-		},
-		{
-			name:         "invalid relationship",
-			relationship: "friend",
-			expectError:  true,
-			errorMsg:     "relationship must be one of: parent, guardian, grandparent, relative, caregiver",
-		},
+	fixture, err := testdata.LoadRelationshipValidationFixture("relationship_validation_tests.json")
+	if err != nil {
+		t.Fatalf("Failed to load test fixture: %v", err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateRelationship(tt.relationship)
-			if tt.expectError {
+	for _, tt := range fixture.RelationshipValidationTests {
+		t.Run(tt.Name, func(t *testing.T) {
+			err := ValidateRelationship(tt.Relationship)
+			if tt.ExpectError {
 				if err == nil {
 					t.Errorf("expected error but got none")
 					return
 				}
-				if err.Error() != tt.errorMsg {
-					t.Errorf("expected error message %q, got %q", tt.errorMsg, err.Error())
+				if tt.ErrorMessage != "" && err.Error() != tt.ErrorMessage {
+					t.Errorf("expected error message %q, got %q", tt.ErrorMessage, err.Error())
 				}
 			} else {
 				if err != nil {

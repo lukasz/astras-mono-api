@@ -9,15 +9,35 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+// RelationshipType represents the relationship between caregiver and child
+type RelationshipType string
+
+const (
+	// RelationshipParent represents a parent relationship
+	RelationshipParent RelationshipType = "parent"
+	
+	// RelationshipGuardian represents a legal guardian relationship
+	RelationshipGuardian RelationshipType = "guardian"
+	
+	// RelationshipGrandparent represents a grandparent relationship
+	RelationshipGrandparent RelationshipType = "grandparent"
+	
+	// RelationshipRelative represents other family relative relationship
+	RelationshipRelative RelationshipType = "relative"
+	
+	// RelationshipCaregiver represents a non-family caregiver relationship
+	RelationshipCaregiver RelationshipType = "caregiver"
+)
+
 // Caregiver represents a parent or guardian in the Astras system
 // with contact information and relationship details.
 type Caregiver struct {
-	ID           int       `json:"id"`                                                     // Unique identifier
-	Name         string    `json:"name" validate:"required,min=2,max=100"`               // Full name
-	Email        string    `json:"email" validate:"required,email"`                       // Contact email address
-	Relationship string    `json:"relationship" validate:"required,oneof=parent guardian grandparent relative caregiver"` // Relationship to child
-	CreatedAt    time.Time `json:"created_at"`                                             // Record creation timestamp
-	UpdatedAt    time.Time `json:"updated_at,omitempty"`                                 // Last update timestamp
+	ID           int              `json:"id"`                                       // Unique identifier
+	Name         string           `json:"name" validate:"required,min=2,max=100"`  // Full name
+	Email        string           `json:"email" validate:"required,email"`         // Contact email address
+	Relationship RelationshipType `json:"relationship" validate:"required,oneof=parent guardian grandparent relative caregiver"` // Relationship to child
+	CreatedAt    time.Time        `json:"created_at"`                               // Record creation timestamp
+	UpdatedAt    time.Time        `json:"updated_at,omitempty"`                   // Last update timestamp
 }
 
 var validate *validator.Validate
@@ -32,13 +52,18 @@ func (c *Caregiver) Validate() error {
 	// Trim whitespace before validation
 	c.Name = strings.TrimSpace(c.Name)
 	c.Email = strings.TrimSpace(c.Email)
-	c.Relationship = strings.TrimSpace(strings.ToLower(c.Relationship))
+	c.Relationship = RelationshipType(strings.TrimSpace(strings.ToLower(string(c.Relationship))))
 
 	// Run struct validation
 	if err := validate.Struct(c); err != nil {
 		if validationErrors, ok := err.(validator.ValidationErrors); ok {
 			return formatValidationError(validationErrors)
 		}
+		return err
+	}
+
+	// Additional business logic validation
+	if err := ValidateRelationship(string(c.Relationship)); err != nil {
 		return err
 	}
 
@@ -105,5 +130,46 @@ func ValidateRelationship(relationship string) error {
 
 // GetValidRelationships returns the list of valid relationship values
 func GetValidRelationships() []string {
-	return []string{"parent", "guardian", "grandparent", "relative", "caregiver"}
+	return []string{
+		string(RelationshipParent),
+		string(RelationshipGuardian),
+		string(RelationshipGrandparent),
+		string(RelationshipRelative),
+		string(RelationshipCaregiver),
+	}
+}
+
+// String returns the string representation of the RelationshipType
+func (r RelationshipType) String() string {
+	return string(r)
+}
+
+// IsValid checks if the relationship type is valid
+func (r RelationshipType) IsValid() bool {
+	switch r {
+	case RelationshipParent, RelationshipGuardian, RelationshipGrandparent, RelationshipRelative, RelationshipCaregiver:
+		return true
+	default:
+		return false
+	}
+}
+
+// IsParent checks if the relationship is a parent
+func (r RelationshipType) IsParent() bool {
+	return r == RelationshipParent
+}
+
+// IsGuardian checks if the relationship is a legal guardian
+func (r RelationshipType) IsGuardian() bool {
+	return r == RelationshipGuardian
+}
+
+// IsFamily checks if the relationship represents a family member
+func (r RelationshipType) IsFamily() bool {
+	switch r {
+	case RelationshipParent, RelationshipGrandparent, RelationshipRelative:
+		return true
+	default:
+		return false
+	}
 }

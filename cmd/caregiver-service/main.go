@@ -46,7 +46,7 @@ func (cr *CaregiverRequest) ToCaregiver(id ...int) (*caregiver.Caregiver, error)
 	caregiverModel := &caregiver.Caregiver{
 		Name:         strings.TrimSpace(cr.Name),
 		Email:        strings.TrimSpace(cr.Email),
-		Relationship: strings.TrimSpace(cr.Relationship),
+		Relationship: caregiver.RelationshipType(strings.TrimSpace(cr.Relationship)),
 		CreatedAt:    time.Now(),
 	}
 
@@ -76,14 +76,14 @@ func (h *CaregiverHandler) GetAll(ctx context.Context, request events.APIGateway
 			ID:           1,
 			Name:         "Sarah Johnson",
 			Email:        "sarah.johnson@example.com",
-			Relationship: "parent",
+			Relationship: caregiver.RelationshipParent,
 			CreatedAt:    time.Now().AddDate(0, -3, 0), // 3 months ago
 		},
 		{
 			ID:           2,
 			Name:         "Mike Smith",
 			Email:        "mike.smith@example.com",
-			Relationship: "guardian",
+			Relationship: caregiver.RelationshipGuardian,
 			CreatedAt:    time.Now().AddDate(0, -1, 0), // 1 month ago
 		},
 	}
@@ -110,7 +110,7 @@ func (h *CaregiverHandler) GetByID(ctx context.Context, request events.APIGatewa
 		ID:           id,
 		Name:         "Sarah Johnson",
 		Email:        "sarah.johnson@example.com",
-		Relationship: "parent",
+		Relationship: caregiver.RelationshipParent,
 		CreatedAt:    time.Now().AddDate(0, -3, 0),
 	}
 
