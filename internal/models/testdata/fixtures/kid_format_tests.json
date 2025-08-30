@@ -1,0 +1,53 @@
+{
+  "description": "Test cases for Kid.FormatBirthdate() method",
+  "testCases": [
+    {
+      "name": "Regular date",
+      "kid": {
+        "name": "Test Kid",
+        "birthdate": "2015-06-15T00:00:00Z"
+      },
+      "expectedFormat": "2015-06-15"
+    },
+    {
+      "name": "Beginning of year",
+      "kid": {
+        "name": "Test Kid",
+        "birthdate": "2020-01-01T00:00:00Z"
+      },
+      "expectedFormat": "2020-01-01"
+    },
+    {
+      "name": "End of year",
+      "kid": {
+        "name": "Test Kid",
+        "birthdate": "2018-12-31T00:00:00Z"
+      },
+      "expectedFormat": "2018-12-31"
+    },
+    {
+      "name": "Leap day",
+      "kid": {
+        "name": "Leap Kid",
+        "birthdate": "2020-02-29T00:00:00Z"
+      },
+      "expectedFormat": "2020-02-29"
+    },
+    {
+      "name": "Date with time (should ignore time part)",
+      "kid": {
+        "name": "Test Kid",
+        "birthdate": "2022-07-04T14:30:45Z"
+      },
+      "expectedFormat": "2022-07-04"
+    },
+    {
+      "name": "Single digit month and day",
+      "kid": {
+        "name": "Test Kid",
+        "birthdate": "2021-03-05T00:00:00Z"
+      },
+      "expectedFormat": "2021-03-05"
+    }
+  ]
+}

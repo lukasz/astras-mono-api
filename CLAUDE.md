@@ -11,12 +11,17 @@ This is the astras-mono-api project - a Go monorepo for API services deployed to
 - Follow the Go Code Review Comments guidelines
 - Write clean, readable, and maintainable code
 - Use meaningful variable and function names
+- **Define constants for limits and formats**: Use named constants instead of magic numbers for validation limits, format strings, and configuration values
+- **Constant naming**: Follow Go convention with proper comments (e.g., `// MaxKidAge defines the maximum allowed age...`)
 
 ### Testing
 - Write tests for new features and bug fixes
 - Ensure all tests pass before marking tasks as complete
 - Run test suite with: `go test ./...`
 - Aim for good test coverage
+- **Use JSON fixtures for test data**: Store test cases in JSON files within `testdata/fixtures/` directories for maintainability and reusability
+- **Deterministic testing**: Use time injection parameters instead of `time.Now()` for predictable test behavior
+- **Test data organization**: Group related test cases in fixture files (e.g., `model_validation_tests.json`, `model_calculation_tests.json`)
 
 ### Linting & Formatting
 - Run formatting: `go fmt ./...`

@@ -1,0 +1,127 @@
+{
+  "description": "Test cases for birthday-related methods: IsBirthdayToday() and DaysUntilBirthday()",
+  "referenceDate": "2024-06-15T12:00:00Z",
+  "testCases": {
+    "isBirthdayToday": [
+      {
+        "name": "Birthday is today",
+        "kid": {
+          "name": "Test Kid",
+          "birthdate": "2019-06-15T00:00:00Z"
+        },
+        "checkDate": "2024-06-15T12:00:00Z",
+        "expectedResult": true
+      },
+      {
+        "name": "Birthday was yesterday",
+        "kid": {
+          "name": "Test Kid", 
+          "birthdate": "2019-06-14T00:00:00Z"
+        },
+        "checkDate": "2024-06-15T12:00:00Z",
+        "expectedResult": false
+      },
+      {
+        "name": "Birthday is tomorrow",
+        "kid": {
+          "name": "Test Kid",
+          "birthdate": "2019-06-16T00:00:00Z"
+        },
+        "checkDate": "2024-06-15T12:00:00Z", 
+        "expectedResult": false
+      },
+      {
+        "name": "Different month",
+        "kid": {
+          "name": "Test Kid",
+          "birthdate": "2019-07-15T00:00:00Z"
+        },
+        "checkDate": "2024-06-15T12:00:00Z",
+        "expectedResult": false
+      },
+      {
+        "name": "Same day and month, different year",
+        "kid": {
+          "name": "Test Kid",
+          "birthdate": "2010-06-15T00:00:00Z"
+        },
+        "checkDate": "2024-06-15T12:00:00Z",
+        "expectedResult": true
+      },
+      {
+        "name": "Leap day birthday, checking on Feb 28 (non-leap year)",
+        "kid": {
+          "name": "Leap Kid",
+          "birthdate": "2016-02-29T00:00:00Z"
+        },
+        "checkDate": "2023-02-28T00:00:00Z",
+        "expectedResult": false
+      }
+    ],
+    "daysUntilBirthday": [
+      {
+        "name": "Birthday is today",
+        "kid": {
+          "name": "Test Kid",
+          "birthdate": "2019-06-15T00:00:00Z"
+        },
+        "checkDate": "2024-06-15T00:00:00Z",
+        "expectedDays": 0
+      },
+      {
+        "name": "Birthday is tomorrow",
+        "kid": {
+          "name": "Test Kid",
+          "birthdate": "2019-06-16T00:00:00Z"
+        },
+        "checkDate": "2024-06-15T00:00:00Z",
+        "expectedDays": 1
+      },
+      {
+        "name": "Birthday in 10 days",
+        "kid": {
+          "name": "Test Kid",
+          "birthdate": "2019-06-25T00:00:00Z"
+        },
+        "checkDate": "2024-06-15T00:00:00Z",
+        "expectedDays": 10
+      },
+      {
+        "name": "Birthday was yesterday (next year)",
+        "kid": {
+          "name": "Test Kid",
+          "birthdate": "2019-06-14T00:00:00Z"
+        },
+        "checkDate": "2024-06-15T00:00:00Z",
+        "expectedDays": 364
+      },
+      {
+        "name": "Birthday in next month",
+        "kid": {
+          "name": "Test Kid",
+          "birthdate": "2019-07-15T00:00:00Z"
+        },
+        "checkDate": "2024-06-15T00:00:00Z",
+        "expectedDays": 30
+      },
+      {
+        "name": "Birthday at end of year",
+        "kid": {
+          "name": "Test Kid",
+          "birthdate": "2019-12-31T00:00:00Z"
+        },
+        "checkDate": "2024-01-01T00:00:00Z",
+        "expectedDays": 365
+      },
+      {
+        "name": "Leap day birthday in non-leap year",
+        "kid": {
+          "name": "Leap Kid",
+          "birthdate": "2020-02-29T00:00:00Z"
+        },
+        "checkDate": "2023-02-28T00:00:00Z",
+        "expectedDays": 1
+      }
+    ]
+  }
+}

@@ -21,16 +21,22 @@ import (
 // KidRequest represents the payload for creating or updating a kid.
 // Used for parsing JSON requests in POST and PUT operations.
 type KidRequest struct {
-	Name string `json:"name,omitempty"` // Child's name
-	Age  int    `json:"age,omitempty"`  // Child's age in years
+	Name      string `json:"name,omitempty"`      // Child's name
+	Birthdate string `json:"birthdate,omitempty"` // Date of birth in YYYY-MM-DD format
 }
 
 // ToKid converts a KidRequest to a Kid model with generated fields.
 // Sets timestamps and can accept an optional ID for updates.
 func (kr *KidRequest) ToKid(id ...int) (*models.Kid, error) {
+	// Parse birthdate from string
+	birthdate, err := time.Parse("2006-01-02", kr.Birthdate)
+	if err != nil {
+		return nil, fmt.Errorf("invalid birthdate format (use YYYY-MM-DD): %v", err)
+	}
+
 	kid := &models.Kid{
 		Name:      strings.TrimSpace(kr.Name),
-		Age:       kr.Age,
+		Birthdate: birthdate,
 		CreatedAt: time.Now(),
 	}
 
@@ -59,14 +65,14 @@ func (h *KidHandler) GetAll(ctx context.Context, request events.APIGatewayProxyR
 		{
 			ID:        1,
 			Name:      "Alice Johnson",
-			Age:       8,
+			Birthdate: time.Now().AddDate(-8, 0, 0),  // 8 years old
 			CreatedAt: time.Now().AddDate(0, -2, 0), // 2 months ago
 		},
 		{
 			ID:        2,
 			Name:      "Bob Smith",
-			Age:       10,
-			CreatedAt: time.Now().AddDate(0, -1, 0), // 1 month ago
+			Birthdate: time.Now().AddDate(-10, 0, 0), // 10 years old
+			CreatedAt: time.Now().AddDate(0, -1, 0),  // 1 month ago
 		},
 	}
 
@@ -91,7 +97,7 @@ func (h *KidHandler) GetByID(ctx context.Context, request events.APIGatewayProxy
 	mockKid := models.Kid{
 		ID:        id,
 		Name:      "Alice Johnson",
-		Age:       8,
+		Birthdate: time.Now().AddDate(-8, 0, 0), // 8 years old
 		CreatedAt: time.Now().AddDate(0, -2, 0),
 	}
 

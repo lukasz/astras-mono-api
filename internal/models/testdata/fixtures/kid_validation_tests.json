@@ -1,0 +1,96 @@
+{
+  "description": "Test cases for Kid.Validate() method with various validation scenarios",
+  "validBirthdate": "2016-06-15T00:00:00Z",
+  "testCases": [
+    {
+      "name": "Valid kid",
+      "kid": {
+        "name": "Alice Johnson",
+        "birthdate": "2016-06-15T00:00:00Z"
+      },
+      "expectError": false,
+      "expectedErrorMessage": ""
+    },
+    {
+      "name": "Empty name",
+      "kid": {
+        "name": "",
+        "birthdate": "2016-06-15T00:00:00Z"
+      },
+      "expectError": true,
+      "expectedErrorMessage": "name is required and cannot be empty"
+    },
+    {
+      "name": "Name with only spaces",
+      "kid": {
+        "name": "   ",
+        "birthdate": "2016-06-15T00:00:00Z"
+      },
+      "expectError": true,
+      "expectedErrorMessage": "name is required and cannot be empty"
+    },
+    {
+      "name": "Name too short",
+      "kid": {
+        "name": "A",
+        "birthdate": "2016-06-15T00:00:00Z"
+      },
+      "expectError": true,
+      "expectedErrorMessage": "name must be at least 2 characters long"
+    },
+    {
+      "name": "Name too long",
+      "kid": {
+        "name": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit",
+        "birthdate": "2016-06-15T00:00:00Z"
+      },
+      "expectError": true,
+      "expectedErrorMessage": "name cannot exceed 255 characters"
+    },
+    {
+      "name": "Zero birthdate",
+      "kid": {
+        "name": "Alice Johnson",
+        "birthdate": "0001-01-01T00:00:00Z"
+      },
+      "expectError": true,
+      "expectedErrorMessage": "birthdate is required"
+    },
+    {
+      "name": "Future birthdate",
+      "kid": {
+        "name": "Alice Johnson",
+        "birthdate": "2030-01-01T00:00:00Z"
+      },
+      "expectError": true,
+      "expectedErrorMessage": "birthdate cannot be in the future"
+    },
+    {
+      "name": "Age over 18",
+      "kid": {
+        "name": "Alice Johnson",
+        "birthdate": "2000-01-01T00:00:00Z"
+      },
+      "expectError": true,
+      "expectedErrorMessage": "age cannot exceed 18 for kids"
+    },
+    {
+      "name": "Exactly 18 years old (valid)",
+      "kid": {
+        "name": "Alice Johnson",
+        "birthdate": "2006-08-31T00:00:00Z"
+      },
+      "expectError": false,
+      "expectedErrorMessage": ""
+    },
+    {
+      "name": "Newborn (valid)",
+      "kid": {
+        "name": "Baby Johnson",
+        "birthdate": "2024-06-14T00:00:00Z"
+      },
+      "expectError": false,
+      "expectedErrorMessage": ""
+    }
+  ]
+}

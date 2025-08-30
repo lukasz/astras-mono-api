@@ -1,0 +1,78 @@
+{
+  "description": "Test cases for Kid.Age() method with various birthdates and reference times",
+  "referenceDate": "2024-06-15T12:00:00Z",
+  "testCases": [
+    {
+      "name": "Kid is exactly 5 years old",
+      "kid": {
+        "name": "Test Kid",
+        "birthdate": "2019-06-15T00:00:00Z"
+      },
+      "atTime": "2024-06-15T12:00:00Z",
+      "expectedAge": 5
+    },
+    {
+      "name": "Kid is 10 years old",
+      "kid": {
+        "name": "Test Kid", 
+        "birthdate": "2014-06-15T00:00:00Z"
+      },
+      "atTime": "2024-06-15T12:00:00Z",
+      "expectedAge": 10
+    },
+    {
+      "name": "Kid is 0 years old (baby born 6 months ago)",
+      "kid": {
+        "name": "Baby Test",
+        "birthdate": "2023-12-15T00:00:00Z"
+      },
+      "atTime": "2024-06-15T12:00:00Z", 
+      "expectedAge": 0
+    },
+    {
+      "name": "Kid's birthday is tomorrow (still previous age)",
+      "kid": {
+        "name": "Test Kid",
+        "birthdate": "2019-06-16T00:00:00Z"
+      },
+      "atTime": "2024-06-15T12:00:00Z",
+      "expectedAge": 4
+    },
+    {
+      "name": "Kid's birthday was yesterday",
+      "kid": {
+        "name": "Test Kid",
+        "birthdate": "2019-06-14T00:00:00Z"
+      },
+      "atTime": "2024-06-15T12:00:00Z",
+      "expectedAge": 5
+    },
+    {
+      "name": "Kid is exactly 18 years old",
+      "kid": {
+        "name": "Oldest Kid",
+        "birthdate": "2006-06-15T00:00:00Z"
+      },
+      "atTime": "2024-06-15T12:00:00Z",
+      "expectedAge": 18
+    },
+    {
+      "name": "Born on leap day, checking in non-leap year",
+      "kid": {
+        "name": "Leap Year Kid",
+        "birthdate": "2016-02-29T00:00:00Z"
+      },
+      "atTime": "2023-02-28T00:00:00Z",
+      "expectedAge": 6
+    },
+    {
+      "name": "Born on leap day, checking on March 1 in non-leap year",
+      "kid": {
+        "name": "Leap Year Kid",
+        "birthdate": "2016-02-29T00:00:00Z"
+      },
+      "atTime": "2023-03-01T00:00:00Z",
+      "expectedAge": 7
+    }
+  ]
+}
