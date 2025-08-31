@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/aws/aws-lambda-go/events"
-	"internal/logger"
+	"github.com/lukasz/astras-mono-api/internal/logger"
 )
 
 // LocalLoggingMiddleware provides logging for local development
@@ -55,7 +55,7 @@ func (lm *LocalLoggingMiddleware) WrapHandler(handler HandlerFunc) HandlerFunc {
 		if lm.isLocal {
 			return lm.wrapLocalHandler(handler)(ctx, request)
 		}
-		
+
 		// Use regular middleware for Lambda
 		middleware := &LoggingMiddleware{
 			logger:      lm.logger,

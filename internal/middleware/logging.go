@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
-	"internal/logger"
+	"github.com/lukasz/astras-mono-api/internal/logger"
 )
 
 // LoggingMiddleware provides HTTP request/response logging for Lambda functions
@@ -41,7 +41,7 @@ func (lm *LoggingMiddleware) WrapHandler(handler HandlerFunc) HandlerFunc {
 
 		// Execute handler
 		response, err := handler(ctx, request)
-		
+
 		duration := time.Since(startTime)
 		statusCode := response.StatusCode
 		if statusCode == 0 && err != nil {
@@ -59,7 +59,7 @@ func (lm *LoggingMiddleware) WrapHandler(handler HandlerFunc) HandlerFunc {
 func (lm *LoggingMiddleware) logIncomingRequest(ctx context.Context, request events.APIGatewayProxyRequest, requestID string) {
 	// Don't log sensitive headers
 	safeHeaders := filterSensitiveHeaders(request.Headers)
-	
+
 	fields := []logger.Field{
 		logger.RequestID(requestID),
 		logger.String("http_method", request.HTTPMethod),
@@ -85,7 +85,7 @@ func (lm *LoggingMiddleware) logIncomingRequest(ctx context.Context, request eve
 func (lm *LoggingMiddleware) logResponse(ctx context.Context, request events.APIGatewayProxyRequest, response events.APIGatewayProxyResponse, err error, duration time.Duration, requestID string, statusCode int) {
 	level := logger.INFO
 	message := "HTTP request completed"
-	
+
 	if err != nil {
 		level = logger.ERROR
 		message = "HTTP request failed"
@@ -127,7 +127,14 @@ func (lm *LoggingMiddleware) logResponse(ctx context.Context, request events.API
 		fields = append(fields, logger.String("performance", "fast"))
 	}
 
-	lm.logger.log(ctx, level, message, fields...)
+	switch level {
+	case logger.ERROR:
+		lm.logger.Error(ctx, message, fields...)
+	case logger.WARN:
+		lm.logger.Warn(ctx, message, fields...)
+	default:
+		lm.logger.Info(ctx, message, fields...)
+	}
 }
 
 // Helper functions
@@ -154,17 +161,17 @@ func getSourceIP(request events.APIGatewayProxyRequest) string {
 			return strings.TrimSpace(ips[0])
 		}
 	}
-	
+
 	// Fall back to X-Real-IP
 	if realIP := request.Headers["X-Real-IP"]; realIP != "" {
 		return realIP
 	}
-	
+
 	// Finally, use the source IP from request context
 	if request.RequestContext.Identity.SourceIP != "" {
 		return request.RequestContext.Identity.SourceIP
 	}
-	
+
 	return "unknown"
 }
 
@@ -176,11 +183,11 @@ func shouldLogRequestBody(request events.APIGatewayProxyRequest) bool {
 
 func filterSensitiveHeaders(headers map[string]string) map[string]string {
 	sensitiveHeaders := map[string]bool{
-		"authorization":    true,
-		"cookie":          true,
-		"x-api-key":       true,
-		"x-auth-token":    true,
-		"x-access-token":  true,
+		"authorization":  true,
+		"cookie":         true,
+		"x-api-key":      true,
+		"x-auth-token":   true,
+		"x-access-token": true,
 	}
 
 	filtered := make(map[string]string)
@@ -210,17 +217,17 @@ func filterSensitiveRequestBody(body string) string {
 				jsonBody[field] = "[REDACTED]"
 			}
 		}
-		
+
 		if filtered, err := json.Marshal(jsonBody); err == nil {
 			return string(filtered)
 		}
 	}
-	
+
 	// If not JSON or filtering failed, check for common sensitive patterns
 	if containsSensitiveData(body) {
 		return "[FILTERED_SENSITIVE_DATA]"
 	}
-	
+
 	return body
 }
 
@@ -251,14 +258,8 @@ func containsSensitiveData(body string) bool {
 // Database logging middleware helper
 func LogDatabaseOperation(ctx context.Context, serviceName, operation, table string, duration time.Duration, err error) {
 	dbLogger := logger.NewDatabaseLogger(serviceName)
-	
-	level := logger.INFO
-	message := "Database operation completed"
-	
-	if err != nil {
-		level = logger.ERROR
-		message = "Database operation failed"
-	}
+
+	_ = err // LogQuery handles error logging internally
 
 	fields := []logger.Field{
 		logger.String("operation", operation),
@@ -281,5 +282,5 @@ func LogDatabaseOperation(ctx context.Context, serviceName, operation, table str
 		fields = append(fields, logger.String("performance", "fast"))
 	}
 
-	dbLogger.logger.log(ctx, level, message, fields...)
+	dbLogger.LogQuery(ctx, "database_operation", []interface{}{operation, table}, duration, err)
 }
